@@ -2,6 +2,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include <stdio.h>
 #include "portaudio.h"
 #include "notelib/internal.h"
 
@@ -56,7 +57,7 @@ struct pa_back_init_data pa_back_notelib_initialize(const struct notelib_params*
 
 	PaError pe = Pa_Initialize();
 	if(pe != paNoError){
-		notelib_deinit(pa_back_notelib_handle);
+		notelib_internals_deinit(pa_back_notelib_handle);
 		ret.error.error_type = pa_back_error_backend;
 		ret.error.pa = pe;
 		return ret;
@@ -66,7 +67,7 @@ struct pa_back_init_data pa_back_notelib_initialize(const struct notelib_params*
 	PaDeviceIndex defaultOutputDevice = Pa_GetDefaultOutputDevice();
 	if(defaultOutputDevice == paNoDevice){
 		Pa_Terminate();
-		notelib_deinit(pa_back_notelib_handle);
+		notelib_internals_deinit(pa_back_notelib_handle);
 		ret.error.error_type = pa_back_error_backend;
 		ret.error.pa = paInvalidDevice;
 		return ret;
@@ -82,7 +83,7 @@ struct pa_back_init_data pa_back_notelib_initialize(const struct notelib_params*
 	PaError pa_error = Pa_OpenStream(&pa_back_pa_stream, NULL, &streamParameters, defaultSampleRate, paFramesPerBufferUnspecified, paNoFlag, &pa_back_callback, pa_back_notelib_handle);
 	if(pa_error != paNoError){
 		Pa_Terminate();
-		notelib_deinit(pa_back_notelib_handle);
+		notelib_internals_deinit(pa_back_notelib_handle);
 		ret.error.error_type = pa_back_error_backend;
 		ret.error.pa = pa_error;
 		return ret;
@@ -91,7 +92,7 @@ struct pa_back_init_data pa_back_notelib_initialize(const struct notelib_params*
 	pa_error = Pa_StartStream(pa_back_pa_stream);
 	if(pa_error != paNoError){
 		Pa_Terminate();
-		notelib_deinit(pa_back_notelib_handle);
+		notelib_internals_deinit(pa_back_notelib_handle);
 		ret.error.error_type = pa_back_error_backend;
 		ret.error.pa = pa_error;
 		return ret;
@@ -105,7 +106,7 @@ struct pa_back_error pa_back_notelib_deinitialize(){
 	struct pa_back_error error;
 	error.error_type = pa_back_error_none;
 	PaError pa_error = Pa_Terminate();
-	enum notelib_status ns = notelib_deinit(pa_back_notelib_handle);
+	enum notelib_status ns = notelib_internals_deinit(pa_back_notelib_handle);
 	if(ns != notelib_status_ok){
 		error.error_type = pa_back_error_notelib;
 		error.notelib = ns;
