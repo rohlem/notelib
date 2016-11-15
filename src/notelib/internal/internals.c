@@ -149,19 +149,19 @@ enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
 }
 
 void notelib_internals_execute_instrument_steps
-(void* channel_state_front, void* channel_state_back, notelib_instrument_state_uint channel_state_size,
+(struct notelib_channel* channel_state_front, struct notelib_channel* channel_state_back, notelib_instrument_state_uint channel_state_size,
  notelib_step_uint step_count, struct notelib_processing_step_entry* steps,
  notelib_sample* instrument_mix_buffer, notelib_sample* channel_mix_buffer, notelib_sample_uint samples_requested,
  notelib_channel_uint* active_channel_count_ptr){
 	// general setup
 	struct notelib_processing_step_entry* steps_end = steps + step_count; //end iterator for steps array
 	bool at_back = false; //whether the current channel is at the back, moving backwards, looking for active channels to replace the dead front with
-	void* current_channel_state; //the channel that is currently being queried
-	void* previous_channel_state_back; //cache for unifying branches
+	void* current_channel_state_data; //the channel that is currently being queried
+	struct notelib_channel* previous_channel_state_back; //cache for unifying branches
 
 	// this once was a do-while-true with custom break points, but with two entry points it's not really worth it
 	loop_start_at_front: //initialization reused as assignment in loop entry
-		current_channel_state = channel_state_front;
+		current_channel_state_data = channel_state_front->data;
 	loop_start_general:;
 		// first generate the samples by calling every step's step function
 		struct notelib_processing_step_entry* current_step = steps;
@@ -171,7 +171,7 @@ void notelib_internals_execute_instrument_steps
 			notelib_sample_uint newly_produced_samples =
 				current_step->step
 				(filled_channel_mix_buffer, channel_mix_buffer,
-				 produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+				 produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 			produced_samples = MIN(produced_samples, newly_produced_samples);
 			++current_step;
 		if(current_step == steps_end) break;
@@ -195,12 +195,12 @@ void notelib_internals_execute_instrument_steps
 			do{
 				notelib_processing_step_cleanup_function cleanup = current_step->cleanup;
 				if(cleanup != NULL)
-					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 				++current_step;
 			}while(current_step != steps_end);
 	if(channel_state_front == channel_state_back) return; //end if this was the last channel to handle, f.e. because we just reached the (already inactive) front again
 			// move to the back, because the front is now inactive
-			current_channel_state = channel_state_back;
+			current_channel_state_data = channel_state_back->data;
 			at_back = true;
 	goto loop_start_general; //continue with the next state (*current_channel_state)
 		}else{ //still active
@@ -260,8 +260,8 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 			if(active_channel_count > 0){
 				struct notelib_processing_step_entry* steps = notelib_instrument_get_processing_steps(internals, instrument_ptr);
 				notelib_instrument_state_uint channel_state_size = instrument_ptr->channel_state_size;
-				void* channel_state_front = notelib_instrument_get_state_data(internals, instrument_ptr);
-				void* channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front, (active_channel_count - 1) * channel_state_size, void*);
+				struct notelib_channel* channel_state_front = notelib_instrument_get_state_data(internals, instrument_ptr);
+				struct notelib_channel* channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front, (active_channel_count - 1) * channel_state_size, void*);
 				notelib_internals_execute_instrument_steps
 				(channel_state_front, channel_state_back, channel_state_size,
 				 step_count, steps,
@@ -304,15 +304,16 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 						notelib_channel_uint* specific_still_active_channel_count = still_active_channel_count + instrument_index;
 						notelib_channel_uint last_channel_index = *specific_still_active_channel_count;
 						++*specific_still_active_channel_count;
-						void* channel_state_ptr =
+
+						struct notelib_channel* channel_state_ptr =
 							NOTELIB_INTERNAL_OFFSET_AND_CAST
 							(instrument_state_data,
 							 last_channel_index*channel_state_size,
-							 void*);
+							 struct notelib_channel*);
 						circular_buffer_liberal_reader_unsynchronized_read
 						(initialized_channel_state_buffer,
 						 channel_state_size,
-						 channel_state_ptr);
+						 channel_state_ptr->data);
 						notelib_sample_uint samples_leftover = new_sample_offset;
 						notelib_sample_uint samples_skipped = samples_requested - samples_leftover;
 						notelib_internals_execute_instrument_steps

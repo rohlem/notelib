@@ -52,7 +52,7 @@ enum notelib_status notelib_internals_init(void* position, size_t space_availabl
 enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle);
 
 void notelib_internals_execute_instrument_steps
-(void* channel_state_front, void* channel_state_back, notelib_instrument_state_uint channel_state_size,
+(struct notelib_channel* channel_state_front, struct notelib_channel* channel_state_back, notelib_instrument_state_uint channel_state_size,
  notelib_step_uint step_count, struct notelib_processing_step_entry* steps,
  notelib_sample* instrument_mix_buffer, notelib_sample* channel_mix_buffer, notelib_sample_uint samples_requested,
  notelib_channel_uint* active_channel_count_ptr);

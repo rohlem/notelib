@@ -4,7 +4,11 @@
 
 //#include "test/test_circular_buffer.h"
 //#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"
-//#include "test/test_notelib_internals.h"
+/*#include "test/test_notelib_internals.h"
+
+int main(void)
+	{return (test_notelib_internals() == EXIT_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;}
+*/
 
 #include "notelib/notelib.h"
 #include "back.h"
@@ -260,9 +264,8 @@ int main(){
 	//return test_circular_buffer_liberal_reader_unsynchronized();
 	//return test_notelib_internals();
 
-	const size_t channel_state_size = sizeof(struct combined_step_data);
-
-//	printf("#RealExpense %d + %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data));
+	const size_t channel_state_size = NOTELIB_SIZEOF_SINGLE_CHANNEL_STATE(sizeof(struct combined_step_data));
+	//printf("#RealExpense %d + %d => %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data), (int)channel_state_size);
 
 	struct notelib_params params = {
 		.instrument_count = 1,

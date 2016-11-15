@@ -29,6 +29,7 @@ typedef void* notelib_state_handle;
 
 typedef uint8_t  notelib_instrument_uint;
 typedef uint16_t notelib_channel_uint;
+typedef uint16_t notelib_note_id_uint;
 typedef uint16_t notelib_instrument_state_uint;
 typedef uint16_t notelib_step_uint;
 typedef  int16_t notelib_sample;
@@ -124,6 +125,10 @@ enum notelib_status notelib_enqueue_trigger
 
 /*notelib_step_uint notelib_instrument_get_step_count
 (notelib_state_handle notelib_state, notelib_instrument_handle handle);*/
+
+#include "internal/channel.h"
+
+#define NOTELIB_SIZEOF_SINGLE_CHANNEL_STATE(CHANNEL_DATA_SIZE) NOTELIB_CHANNEL_SIZEOF_SINGLE(CHANNEL_DATA_SIZE)
 
 #ifdef __cplusplus
 }

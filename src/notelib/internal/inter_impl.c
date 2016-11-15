@@ -1,5 +1,7 @@
 #include "../notelib.h"
 
+#include "alignment_utilities.h"
+#include "channel.h"
 #include "circular_buffer.h"
 #include "command.h"
 #include "instrument.h"
@@ -55,10 +57,11 @@ instrument_index_found:
 		steps_ptr[step_index].setup = steps[step_index].setup;
 		steps_ptr[step_index].cleanup = steps[step_index].cleanup;
 	}
-	instrument->channel_state_size = state_offset;
+	notelib_instrument_state_uint channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(state_offset);
+	instrument->channel_state_size = channel_state_size;
 	instrument->channel_count = channel_count;
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument)){
-		void* state_data = malloc(channel_count * state_offset);
+		void* state_data = malloc(channel_count * channel_state_size);
 		if(state_data == NULL){
 			//if(steps_ptr_to_free_at_failure != NULL)
 			free(steps_ptr_to_free_at_failure);

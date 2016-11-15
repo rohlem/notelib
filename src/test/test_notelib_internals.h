@@ -42,21 +42,21 @@ struct notelib_params minimal_test_params = {
 struct notelib_params small_params = {
 	.instrument_count = 1,
 	.inline_step_count = 4,
-	.reserved_inline_state_space = 32,
+	.reserved_inline_state_space = 2*NOTELIB_CHANNEL_SIZEOF_SINGLE(16),
 	.internal_dual_buffer_size = 128,
 	.track_count = 1,
 	.queued_command_count = 16,
-	.reserved_inline_initialized_channel_buffer_size = 32
+	.reserved_inline_initialized_channel_buffer_size = 2*NOTELIB_CHANNEL_SIZEOF_SINGLE(16)
 };
 
 struct notelib_params standard_params = {
 	.instrument_count = 1,
 	.inline_step_count = 4,
-	.reserved_inline_state_space = 128,
+	.reserved_inline_state_space = 8*NOTELIB_CHANNEL_SIZEOF_SINGLE(16),
 	.internal_dual_buffer_size = 256,
 	.track_count = 1,
 	.queued_command_count = 16,
-	.reserved_inline_initialized_channel_buffer_size = 64
+	.reserved_inline_initialized_channel_buffer_size = 4*NOTELIB_CHANNEL_SIZEOF_SINGLE(16)
 };
 
 void test_notelib_internals_size_requirements(){
@@ -171,7 +171,7 @@ int test_notelib_instrument_registration(){
 enum notelib_status test_notelib_track_start(){
 	only_track_tempo_interval = 4;
 	only_track_tempo_interval_samples = 4;
-	return notelib_start_track(notelib_buffer, &only_track_index, 64, only_track_tempo_interval, only_track_tempo_interval_samples);
+	return notelib_start_track(notelib_buffer, &only_track_index, 2*NOTELIB_CHANNEL_SIZEOF_SINGLE(sizeof(struct sample_stair_state_data))+1, only_track_tempo_interval, only_track_tempo_interval_samples);
 }
 
 void test_notelib_fill_buffer(){
@@ -264,9 +264,6 @@ int test_notelib_internals(){
 	test_notelib_internals_size_requirements();
 	test_notelib_internals_sizes(&minimal_test_params);
 	int ret = handle_notelib_status(test_notelib_init(&minimal_test_params), "Failed to init notelib!\n", "Notelib initialized successfully!\n");
-	if(ret != EXIT_SUCCESS)
-		return ret;
-	ret = handle_notelib_status(test_notelib_instrument_registration(), "Failed to   register sample_stair instrument!\n", "Successfully   registered sample_stairs instrument!\n");
 	if(ret != EXIT_SUCCESS)
 		return ret;
 	test_notelib_fill_buffer();
