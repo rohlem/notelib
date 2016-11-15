@@ -38,8 +38,7 @@ struct notelib_instrument_external_steps{
 struct notelib_instrument_external_steps_inline_state{
 	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
 	struct notelib_processing_step_entry* external_steps;
-	/*alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT)*/
-	unsigned char inline_state[];
+	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT) unsigned char inline_state[];
 };
 struct notelib_instrument_external_steps_external_state{
 	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
