@@ -223,15 +223,37 @@ enum notelib_status test_notelib_instrument_unregistration()
 	{return notelib_unregister_instrument(notelib_buffer, sample_stair_instrument_index);}
 
 int handle_notelib_status(enum notelib_status status, const char* failtext, const char* succtext){
-	if(status == notelib_status_not_ok){
+	switch(status){
+	case notelib_status_not_ok:
 		printf("Something went horribly wrong!\n");
 		fflush(stdout);
 		return EXIT_FAILURE;
-	}else if(status == notelib_answer_failure_unknown){
+	case notelib_answer_failure_bad_alloc:
+		puts("!BAD ALLOC!\n");
+		goto case_failure;
+	case notelib_answer_failure_insufficient_command_queue_entries:
+		puts("!INSUFFICIENT COMMAND QUEUE ENTRIES!\n");
+		goto case_failure;
+	case notelib_answer_failure_insufficient_initialized_channel_buffer_space:
+		puts("!INSUFFICIENT INITIALIZED CHANNEL BUFFER SPACE!\n");
+		goto case_failure;
+	case notelib_answer_failure_invalid_instrument:
+		puts("!INVALID INSTRUMENT!\n");
+		goto case_failure;
+	case notelib_answer_failure_invalid_track:
+		puts("!INVALID TRACK!\n");
+		goto case_failure;
+	case notelib_answer_failure_unknown:
+		puts("!UNKNOWN!\n");
+		goto case_failure;
+	default:
+		puts("! ???? !\n");
+		goto case_failure;
+	case_failure:
 		printf(failtext);
 		fflush(stdout);
 		return EXIT_FAILURE;
-	}else{
+	case notelib_answer_success:
 		printf(succtext);
 		fflush(stdout);
 		return EXIT_SUCCESS;
