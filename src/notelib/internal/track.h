@@ -18,7 +18,7 @@ struct notelib_track{
 	notelib_sample_uint position_sample_offset;
 	uint32_t initialized_channel_buffer_size;
 	struct circular_buffer command_queue;
-	//union of struct circular_buffer_liberal_reader_unsynchronized inline_initialized_channel_buffer and circular_buffer_liberal_reader_unsynchronized external_initialized_channel_buffer ; size in no way enforced
+	//union of struct circular_buffer_liberal_reader_unsynchronized inline_initialized_channel_buffer and circular_buffer_liberal_reader_unsynchronized* external_initialized_channel_buffer ; size in no way enforced
 };
 
 notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track* track, notelib_position first_position, notelib_position last_position);
