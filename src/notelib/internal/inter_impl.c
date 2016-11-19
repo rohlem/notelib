@@ -65,7 +65,7 @@ instrument_index_found:
 			instrument->step_count = 0;
 			return notelib_answer_failure_unknown;
 		}
-		*notelib_instrument_get_external_state_data_ptr(notelib_state, instrument, processing_steps_inline) = state_data;
+		*notelib_instrument_get_external_state_data_ptr(instrument, processing_steps_inline) = state_data;
 	}
 	return notelib_answer_success;
 }
@@ -78,7 +78,7 @@ enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle no
 	bool processing_steps_inline = notelib_instrument_are_processing_steps_inline(notelib_state, instrument_ptr);
 	void* ptr_to_free;
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument_ptr))
-		ptr_to_free = *notelib_instrument_get_external_state_data_ptr(notelib_state, instrument_ptr, processing_steps_inline);
+		ptr_to_free = *notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline);
 	else
 		ptr_to_free = NULL;
 	notelib_channel_uint channel_count_before = instrument_ptr->channel_count;
@@ -89,7 +89,7 @@ enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle no
 			instrument_ptr->channel_count = channel_count_before;
 			return notelib_answer_failure_unknown;
 		}
-		*notelib_instrument_get_external_state_data_ptr(notelib_state, instrument_ptr, processing_steps_inline) = state_data;
+		*notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline) = state_data;
 	}
 	//if(ptr_to_free != NULL)
 	free(ptr_to_free);
@@ -104,7 +104,7 @@ enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_s
 	if(!processing_steps_inline)
 		free(((struct notelib_instrument_external_steps*)instrument_ptr)->external_steps);
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument_ptr))
-		free(*notelib_instrument_get_external_state_data_ptr(notelib_state, instrument_ptr, processing_steps_inline));
+		free(*notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline));
 	instrument_ptr->step_count = 0;
 	return notelib_answer_success;
 }

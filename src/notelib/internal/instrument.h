@@ -74,12 +74,12 @@ size_t notelib_instrument_get_effective_state_data_inline_space(const struct not
 
 bool notelib_instrument_is_state_data_inline(const struct notelib_internals* internals, struct notelib_instrument* instrument);
 
-void*  notelib_instrument_get_inline_state_data_after_inline_steps(const struct notelib_internals* internals, struct notelib_instrument* instrument);
+void*  notelib_instrument_get_inline_state_data_after_inline_steps(struct notelib_instrument* instrument);
 
-void** notelib_instrument_get_external_state_data_after_inline_steps(const struct notelib_internals* internals, struct notelib_instrument* instrument);
+void** notelib_instrument_get_external_state_data_after_inline_steps(struct notelib_instrument* instrument);
 
 void* notelib_instrument_get_state_data(const struct notelib_internals* internals, struct notelib_instrument* instrument);
 
-void** notelib_instrument_get_external_state_data_ptr(const struct notelib_internals* internals, struct notelib_instrument* instrument, bool processing_steps_inline);
+void** notelib_instrument_get_external_state_data_ptr(struct notelib_instrument* instrument, bool processing_steps_inline);
 
 #endif//#ifndef NOTELIB_INTERNAL_INSTRUMENT_H_

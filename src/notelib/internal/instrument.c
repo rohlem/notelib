@@ -25,25 +25,11 @@ size_t notelib_internals_sizeof_instrument_inline_steps_up_to_inline_state_data(
 		  + notelib_instrument_get_inline_steps_size(inline_step_count),
 		  NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT);}
 
-size_t notelib_internals_sizeof_instrument_external_steps_up_to_inline_state_data(uint8_t inline_step_count)
-	{return
-		 NOTELIB_INTERNAL_ALIGN_TO_NEXT
-		 (notelib_instrument_offsetof_steps_ptr
-		  + sizeof(struct notelib_processing_step_entry*),
-		  NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT);}
-
 size_t notelib_internals_sizeof_instrument_inline_steps_up_to_external_state_data_ptr(uint8_t inline_step_count)
 	{return
 		 NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
 		 (notelib_instrument_offsetof_steps_array
 		  + notelib_instrument_get_inline_steps_size(inline_step_count),
-		  void*);}
-
-size_t notelib_internals_sizeof_instrument_external_steps_up_to_external_state_data_ptr(uint8_t inline_step_count)
-	{return
-		 NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
-		 (notelib_instrument_offsetof_steps_ptr
-		  + sizeof(struct notelib_processing_step_entry*),
 		  void*);}
 
 size_t notelib_internals_sizeof_instrument(uint8_t inline_step_count, uint16_t reserved_inline_state_space)
@@ -67,14 +53,14 @@ size_t notelib_internals_effective_sizeof_instrument_up_to_inline_state_data(con
 	if(notelib_instrument_are_processing_steps_inline(internals, instrument))
 		return notelib_internals_sizeof_instrument_inline_steps_up_to_inline_state_data  (instrument->step_count);
 	else
-		return notelib_internals_sizeof_instrument_external_steps_up_to_inline_state_data(instrument->step_count);
+		return notelib_instrument_external_offsetof_state_array;
 }
 
 size_t notelib_internals_effective_sizeof_instrument_up_to_external_state_data_ptr(const struct notelib_internals* internals, struct notelib_instrument* instrument){
 	if(notelib_instrument_are_processing_steps_inline(internals, instrument))
 		return notelib_internals_sizeof_instrument_inline_steps_up_to_external_state_data_ptr  (instrument->step_count);
 	else
-		return notelib_internals_sizeof_instrument_external_steps_up_to_external_state_data_ptr(instrument->step_count);
+		return notelib_instrument_external_offsetof_state_ptr;
 }
 
 size_t notelib_instrument_get_effective_state_data_inline_space(const struct notelib_internals* internals, struct notelib_instrument* instrument)
@@ -84,14 +70,14 @@ size_t notelib_instrument_get_effective_state_data_inline_space(const struct not
 bool notelib_instrument_is_state_data_inline(const struct notelib_internals* internals, struct notelib_instrument* instrument)
 	{return instrument->channel_count * instrument->channel_state_size <= notelib_instrument_get_effective_state_data_inline_space(internals, instrument);}
 
-void*  notelib_instrument_get_inline_state_data_after_inline_steps(const struct notelib_internals* internals, struct notelib_instrument* instrument)
+void*  notelib_instrument_get_inline_state_data_after_inline_steps(struct notelib_instrument* instrument)
 	{return
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
 		 (instrument,
 		  notelib_internals_sizeof_instrument_inline_steps_up_to_inline_state_data(instrument->step_count),
 		  void*);}
 
-void** notelib_instrument_get_external_state_data_after_inline_steps(const struct notelib_internals* internals, struct notelib_instrument* instrument)
+void** notelib_instrument_get_external_state_data_after_inline_steps(struct notelib_instrument* instrument)
 	{return
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
 		 (instrument,
@@ -101,9 +87,9 @@ void** notelib_instrument_get_external_state_data_after_inline_steps(const struc
 void* notelib_instrument_get_state_data(const struct notelib_internals* internals, struct notelib_instrument* instrument){
 	if(notelib_instrument_are_processing_steps_inline(internals, instrument)){
 		if(notelib_instrument_is_state_data_inline(internals, instrument))
-			return  notelib_instrument_get_inline_state_data_after_inline_steps  (internals, instrument);
+			return  notelib_instrument_get_inline_state_data_after_inline_steps  (instrument);
 		else
-			return *notelib_instrument_get_external_state_data_after_inline_steps(internals, instrument);
+			return *notelib_instrument_get_external_state_data_after_inline_steps(instrument);
 	}else{
 		if(notelib_instrument_is_state_data_inline(internals, instrument))
 			return ((struct notelib_instrument_external_steps_inline_state*)  instrument)->  inline_state;
@@ -112,9 +98,9 @@ void* notelib_instrument_get_state_data(const struct notelib_internals* internal
 	}
 }
 
-void** notelib_instrument_get_external_state_data_ptr(const struct notelib_internals* internals, struct notelib_instrument* instrument, bool processing_steps_inline){
+void** notelib_instrument_get_external_state_data_ptr(struct notelib_instrument* instrument, bool processing_steps_inline){
 	if(processing_steps_inline)
-		return notelib_instrument_get_external_state_data_after_inline_steps(internals, instrument);
+		return notelib_instrument_get_external_state_data_after_inline_steps(instrument);
 	else
 		return &((struct notelib_instrument_external_steps_external_state*)instrument)->external_state;
 }
