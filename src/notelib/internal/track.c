@@ -25,6 +25,13 @@ notelib_position notelib_track_get_position_change(const struct notelib_track* t
 		return maximally_covered_positions;
 }
 
+struct circular_buffer*  notelib_track_get_command_queue(struct notelib_track* track_ptr)
+	{return
+		 NOTELIB_INTERNAL_OFFSET_AND_CAST
+		 (track_ptr,
+		  notelib_track_offsetof_command_queue,
+		  struct circular_buffer*);}
+
 struct circular_buffer_liberal_reader_unsynchronized*  notelib_track_get_inline_initialized_channel_buffer(struct notelib_track* track_ptr, uint16_t queued_command_count)
 	{return
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST

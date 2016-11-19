@@ -143,7 +143,7 @@ track_found:;
 	size_t sizeof_command_queue = notelib_internals_sizeof_track_command_queue(command_queue_size);
 	struct circular_buffer* command_queue =
 		circular_buffer_construct
-		(&track_ptr->command_queue,
+		(notelib_track_get_command_queue(track_ptr),
 		 sizeof_command_queue,
 		 sizeof(struct notelib_command));
 	if(command_queue == NULL){
@@ -173,7 +173,7 @@ enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_st
 	struct notelib_command reset_command;
 	reset_command.type = notelib_command_type_reset;
 	reset_command.position = position;
-	if(circular_buffer_write(&notelib_internals_get_track(notelib_state, track_index)->command_queue, &reset_command))
+	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_track(notelib_state, track_index)), &reset_command))
 		return notelib_answer_success;
 	else
 		return notelib_answer_failure_unknown;
@@ -190,7 +190,7 @@ enum notelib_status notelib_set_track_tempo
 	set_tempo_command.tempo.position_interval = tempo_interval;
 	set_tempo_command.tempo.interval = tempo_interval_samples;
 	set_tempo_command.position = position;
-	if(circular_buffer_write(&notelib_internals_get_track(notelib_state, track_index)->command_queue, &set_tempo_command))
+	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_track(notelib_state, track_index)), &set_tempo_command))
 		return notelib_answer_success;
 	else
 		return notelib_answer_failure_unknown;
@@ -273,7 +273,7 @@ enum notelib_status notelib_play
 	play_note_command.type = notelib_command_type_note;
 	play_note_command.note.instrument_index = instrument_index;
 	play_note_command.position = position;
-	if(!circular_buffer_write(&track_ptr->command_queue, &play_note_command)){
+	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &play_note_command)){
 		for(notelib_step_uint i = 0; i < step_count; ++i){
 			struct notelib_processing_step_entry* step = steps_ptr + i;
 			notelib_processing_step_cleanup_function cleanup = step->cleanup;

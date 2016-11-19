@@ -258,7 +258,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 		notelib_sample_uint new_sample_offset;
 		cautiously_advance_track_position(track_ptr, &new_position, &new_sample_offset, old_position, old_position_sample_offset, &should_check_for_updates, samples_to_process_commands_for);
 		if(should_check_for_updates){
-			struct circular_buffer* command_queue_ptr = &track_ptr->command_queue;
+			struct circular_buffer* command_queue_ptr = notelib_track_get_command_queue(track_ptr);
 			const struct notelib_command* command_ptr;
 			do{
 				command_ptr = circular_buffer_direct_read_commence(command_queue_ptr);
