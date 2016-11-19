@@ -117,7 +117,8 @@ enum notelib_status notelib_start_track
 	struct notelib_internals* internals = (struct notelib_internals*)notelib_state;
 	notelib_track_uint track_count = internals->track_count;
 	struct notelib_track* track_ptr;
-	for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){
+	notelib_track_uint track_index;
+	for(track_index = 0; track_index < track_count; ++track_index){
 		track_ptr = notelib_internals_get_track(notelib_state, track_index);
 		if(track_ptr->tempo_ceil_interval_samples == 0)
 			goto track_found;
@@ -165,6 +166,7 @@ track_found:;
 	if(!initialized_channel_buffer_inline)
 		*notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size) = initialized_channel_buffer_position;
 
+	*track_index_dest = track_index;
 	return notelib_answer_success;
 }
 enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
