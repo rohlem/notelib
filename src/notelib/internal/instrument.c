@@ -3,6 +3,8 @@
 #include "alignment_utilities.h"
 #include "internals.h"
 
+#include <stddef.h>
+
 struct notelib_instrument* notelib_internals_get_instrument(struct notelib_internals* internals, notelib_instrument_uint index)
 	{return
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
@@ -68,7 +70,7 @@ size_t notelib_instrument_get_effective_state_data_inline_space(const struct not
 		 - notelib_internals_effective_sizeof_instrument_up_to_inline_state_data(internals, instrument);}
 
 bool notelib_instrument_is_state_data_inline(const struct notelib_internals* internals, struct notelib_instrument* instrument)
-	{return instrument->channel_count * instrument->channel_state_size <= notelib_instrument_get_effective_state_data_inline_space(internals, instrument);}
+	{return (size_t)(instrument->channel_count * instrument->channel_state_size) <= notelib_instrument_get_effective_state_data_inline_space(internals, instrument);}
 
 void*  notelib_instrument_get_inline_state_data_after_inline_steps(struct notelib_instrument* instrument)
 	{return
