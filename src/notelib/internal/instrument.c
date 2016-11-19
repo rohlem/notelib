@@ -94,9 +94,9 @@ void*  notelib_instrument_get_inline_state_data_after_inline_steps(const struct 
 void** notelib_instrument_get_external_state_data_after_inline_steps(const struct notelib_internals* internals, struct notelib_instrument* instrument)
 	{return
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
-		  (instrument,
-		   notelib_internals_sizeof_instrument_inline_steps_up_to_external_state_data_ptr(instrument->step_count),
-		   void**);}
+		 (instrument,
+		  notelib_internals_sizeof_instrument_inline_steps_up_to_external_state_data_ptr(instrument->step_count),
+		  void**);}
 
 void* notelib_instrument_get_state_data(const struct notelib_internals* internals, struct notelib_instrument* instrument){
 	if(notelib_instrument_are_processing_steps_inline(internals, instrument)){
