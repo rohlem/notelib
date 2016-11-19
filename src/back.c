@@ -15,8 +15,6 @@ PaStream* pa_back_pa_stream = NULL;
 unsigned char pa_back_notelib_buffer[NOTELIB_PA_BACK_PROVIDED_BUFFER_SIZE];
 notelib_state_handle pa_back_notelib_handle = NULL;
 
-PaStreamCallback f;
-
 int pa_back_callback
 (const void *input, void *output, unsigned long frameCount,
  const PaStreamCallbackTimeInfo* timeInfo,
