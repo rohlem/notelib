@@ -30,7 +30,7 @@ struct circular_buffer_liberal_reader_unsynchronized*  notelib_track_get_inline_
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
 		 (track_ptr,
 		  NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF(
-		   notelib_tracks_offsetof_command_queue
+		   notelib_track_offsetof_command_queue
 		   + notelib_internals_sizeof_track_command_queue(queued_command_count),
 		  struct circular_buffer_liberal_reader_unsynchronized),
 		  struct circular_buffer_liberal_reader_unsynchronized*);}
@@ -40,7 +40,7 @@ struct circular_buffer_liberal_reader_unsynchronized** notelib_track_get_externa
 		 NOTELIB_INTERNAL_OFFSET_AND_CAST
 		 (track_ptr,
 		  NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF(
-		   notelib_tracks_offsetof_command_queue
+		   notelib_track_offsetof_command_queue
 		   + notelib_internals_sizeof_track_command_queue(queued_command_count),
 		  struct circular_buffer_liberal_reader_unsynchronized*),
 		  struct circular_buffer_liberal_reader_unsynchronized**);}

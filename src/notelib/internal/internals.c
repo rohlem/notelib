@@ -57,7 +57,7 @@ size_t notelib_internals_sizeof_track(uint16_t queued_command_count, uint16_t re
 	{return
 		 NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
 		 (NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
-		  (notelib_tracks_offsetof_command_queue + notelib_internals_sizeof_track_command_queue(queued_command_count),
+		  (notelib_track_offsetof_command_queue + notelib_internals_sizeof_track_command_queue(queued_command_count),
 		   struct circular_buffer_liberal_reader_unsynchronized)
 		  + notelib_internals_sizeof_track_initialized_channel_buffer(reserved_inline_initialized_channel_buffer_size),
 		  struct notelib_track);}

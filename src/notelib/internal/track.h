@@ -25,7 +25,7 @@ notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track*
 
 notelib_position notelib_track_get_position_change(const struct notelib_track* track, notelib_position starting_position, notelib_sample_uint sample_interval);
 
-static const size_t notelib_tracks_offsetof_command_queue = offsetof(struct notelib_track, command_queue);
+static const size_t notelib_track_offsetof_command_queue = offsetof(struct notelib_track, command_queue);
 
 struct circular_buffer_liberal_reader_unsynchronized*  notelib_track_get_inline_initialized_channel_buffer(struct notelib_track* track_ptr, uint16_t queued_command_count);
 
