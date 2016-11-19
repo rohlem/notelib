@@ -11,37 +11,34 @@
 
 #define NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT alignof(max_align_t)
 
-#define NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS\
-	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT)\
-	_Atomic notelib_channel_uint active_channel_count;\
-	notelib_channel_uint channel_count;\
-	notelib_instrument_state_uint channel_state_size;\
-	notelib_step_uint step_count;
-
-//common type of notelib_instrument_inline_steps and notelib_instrument_external_steps
+//"abstract" (not usable solely on its own) "base"/common type of notelib_instrument_inline_steps and notelib_instrument_external_steps
 struct notelib_instrument{
-	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
+	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT)
+	_Atomic notelib_channel_uint active_channel_count;
+	notelib_channel_uint channel_count;
+	notelib_instrument_state_uint channel_state_size;
+	notelib_step_uint step_count;
 	//union of struct notelib_processing_step_entry* steps and struct notelib_processing_step_entry inline_steps[] ; size in no way enforced
 	//union of void* external_state and unsigned char inline_state[] ; size in no way enforced
 };
 //this one is assumed to have the strictest alignment requirement out of all of them
 struct notelib_instrument_inline_steps{
-	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
+	struct notelib_instrument base;
 	struct notelib_processing_step_entry inline_steps[];
 	//union of void* external_state and unsigned char inline_state[] at &inline_steps[step_count] ; size in no way enforced
 };
 struct notelib_instrument_external_steps{
-	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
+	struct notelib_instrument base;
 	struct notelib_processing_step_entry* external_steps;
 	//union of void* external_state and unsigned char inline_state[] ; size in no way enforced
 };
 struct notelib_instrument_external_steps_inline_state{
-	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
+	struct notelib_instrument_external_steps base;
 	struct notelib_processing_step_entry* external_steps;
 	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT) unsigned char inline_state[];
 };
 struct notelib_instrument_external_steps_external_state{
-	NOTELIB_INTERNAL_NOTELIB_INSTRUMENT_MEMBERS
+	struct notelib_instrument_external_steps base;
 	struct notelib_processing_step_entry* external_steps;
 	void* external_state;
 };
