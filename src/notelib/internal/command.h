@@ -15,6 +15,7 @@ struct notelib_command{
 	union{
 		struct notelib_command_note{
 			notelib_instrument_uint instrument_index;
+			notelib_note_id_uint note_id;
 		} note;
 		struct notelib_tempo{
 			notelib_position position_interval;

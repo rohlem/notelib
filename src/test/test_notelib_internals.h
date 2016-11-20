@@ -196,7 +196,7 @@ enum notelib_status test_notelib_instrument_play(){
 		.step_width = 3,
 		.lifetime = 88
 	};
-	return notelib_play(notelib_buffer, sample_stair_instrument_index, &setup_data, only_track_index, only_track_next_position);
+	return notelib_play(notelib_buffer, sample_stair_instrument_index, &setup_data, only_track_index, only_track_next_position, NULL);
 }
 
 enum notelib_status test_notelib_instrument_concurrent_play(){
@@ -210,7 +210,7 @@ enum notelib_status test_notelib_instrument_concurrent_play(){
 		.step_width = 1,
 		.lifetime = 0x55
 	};
-	return notelib_play(notelib_buffer, sample_stair_instrument_index, &setup_data, only_track_index, only_track_next_position);
+	return notelib_play(notelib_buffer, sample_stair_instrument_index, &setup_data, only_track_index, only_track_next_position, NULL);
 }
 
 enum notelib_status test_notelib_track_stop(){

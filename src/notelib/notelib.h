@@ -117,7 +117,8 @@ enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
- notelib_track_uint track_index, notelib_position position);
+ notelib_track_uint track_index, notelib_position position,
+ notelib_note_id_uint* note_id_target);
 enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,

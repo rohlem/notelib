@@ -244,7 +244,8 @@ enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
- notelib_track_uint track_index, notelib_position position){
+ notelib_track_uint track_index, notelib_position position,
+ notelib_note_id_uint* note_id_target){
 	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
 	if(track_ptr->tempo_ceil_interval_samples == 0)
 		return notelib_answer_failure_invalid_track;
@@ -275,6 +276,13 @@ enum notelib_status notelib_play
 	struct notelib_command play_note_command;
 	play_note_command.type = notelib_command_type_note;
 	play_note_command.note.instrument_index = instrument_index;
+	notelib_note_id_uint note_id = notelib_instrument_get_next_note_id(instrument_ptr);
+	//could split up get and increment of note_id and only increment if command_queue write was successful
+	 //+ help performance in the case of error (which is not a priority)
+	 //- possibly hurt data access locality? Can fetch-post-increment optimization be expected?
+	play_note_command.note.note_id = note_id;
+	if(note_id_target != NULL)
+		*note_id_target = note_id;
 	play_note_command.position = position;
 	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &play_note_command)){
 		for(notelib_step_uint i = 0; i < step_count; ++i){

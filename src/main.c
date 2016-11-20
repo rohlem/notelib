@@ -110,7 +110,9 @@ notelib_instrument_uint instrument_id;
 notelib_track_uint track_id;
 
 bool play(struct instrument_setup_data note, notelib_position position){
-	enum notelib_status status = notelib_play(pa_back_notelib_handle, instrument_id, &note, track_id, position);
+	//notelib_note_id_uint note_id;
+	enum notelib_status status = notelib_play(pa_back_notelib_handle, instrument_id, &note, track_id, position, NULL); //&note_id
+	//printf("#%hu: %d\n", note_id, note.sine.pitch);
 	if(status != notelib_status_ok){
 		printf("Error playing note (pitch=%d)!\n", (int)note.sine.pitch);
 		switch(status){

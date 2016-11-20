@@ -86,4 +86,6 @@ struct notelib_channel* notelib_instrument_get_state_data(const struct notelib_i
 
 struct notelib_channel** notelib_instrument_get_external_state_data_ptr(struct notelib_instrument* instrument, bool processing_steps_inline);
 
+notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_instrument*);
+
 #endif//#ifndef NOTELIB_INTERNAL_INSTRUMENT_H_

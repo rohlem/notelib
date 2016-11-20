@@ -295,7 +295,8 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 				if(command_position >= ceiled_old_position && command_position < new_position_ceiled){
 					switch(command_ptr->type){
 					case notelib_command_type_note:;
-						notelib_instrument_uint instrument_index = command_ptr->note.instrument_index;
+						const struct notelib_command_note* note_command = &(command_ptr->note);
+						notelib_instrument_uint instrument_index = note_command->instrument_index;
 						struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
 						struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_state_buffer =
 							notelib_track_get_initialized_channel_buffer_ptr(internals, track_ptr);
@@ -310,6 +311,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 							(instrument_state_data,
 							 last_channel_index*channel_state_size,
 							 struct notelib_channel*);
+						channel_state_ptr->current_note_id = note_command->note_id;
 						circular_buffer_liberal_reader_unsynchronized_read
 						(initialized_channel_state_buffer,
 						 channel_state_size,
