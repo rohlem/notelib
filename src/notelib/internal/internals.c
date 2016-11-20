@@ -215,23 +215,6 @@ void notelib_internals_execute_instrument_steps
 	//unreachable
 }
 
-void cautiously_advance_track_position
-(struct notelib_track* track_ptr, notelib_position* new_position, notelib_sample_uint* new_sample_offset, notelib_position old_position, notelib_sample_uint old_position_sample_offset,
- bool* should_check_for_updates, notelib_sample_uint samples_to_process_commands_for){
-	*new_sample_offset = old_position_sample_offset + samples_to_process_commands_for;
-	notelib_sample_uint tempo_interval = notelib_track_get_tempo_interval(track_ptr, old_position, old_position+1);
-	if(*new_sample_offset >= tempo_interval){
-		notelib_position a = notelib_track_get_position_change(track_ptr, old_position, *new_sample_offset);
-		*new_position = old_position + a;
-		notelib_sample_uint b = notelib_track_get_tempo_interval(track_ptr, old_position, *new_position);
-		*new_sample_offset -= b;
-		track_ptr->position_sample_offset = *new_sample_offset;
-		track_ptr->position = *new_position;
-		*should_check_for_updates = true;
-	}
-	track_ptr->position_sample_offset = *new_sample_offset;
-}
-
 //TODO: Optimize array copies through assignments to memcpy (perhaps via macro)
 void notelib_internals_fill_buffer_part(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_requested, notelib_channel_uint* still_active_channel_count){
 	notelib_instrument_uint instrument_count = internals->instrument_count;
@@ -252,115 +235,118 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 #else//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 	notelib_sample* channel_mix_buffer = notelib_internals_get_audio_buffer(internals);
 #endif//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
-	for(notelib_instrument_uint instrument_index = 0; instrument_index < instrument_count; ++instrument_index){
-		struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(internals, instrument_index);
-		notelib_step_uint step_count = instrument_ptr->step_count;
-		if(step_count > 0){
-			notelib_channel_uint active_channel_count = still_active_channel_count[instrument_index];
-			if(active_channel_count > 0){
-				struct notelib_processing_step_entry* steps = notelib_instrument_get_processing_steps(internals, instrument_ptr);
-				notelib_instrument_state_uint channel_state_size = instrument_ptr->channel_state_size;
-				struct notelib_channel* channel_state_front = notelib_instrument_get_state_data(internals, instrument_ptr);
-				struct notelib_channel* channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front, (active_channel_count - 1) * channel_state_size, void*);
-				notelib_internals_execute_instrument_steps
-				(channel_state_front, channel_state_back, channel_state_size,
-				 step_count, steps,
-				 instrument_mix_buffer, channel_mix_buffer, samples_requested,
-				 still_active_channel_count + instrument_index);
+
+	//TODO: optimization opportunity (probably behind preprocessor/config flag): link notes with tracks (presumably in struct notelib_channel) so we can safely generate bigger chunks of samples from less active tracks
+
+	notelib_sample_uint samples_generated = 0;
+	do{//samples_requested cannot be 0
+		//CHECK HOW MANY SAMPLES TO GENERATE BEFORE COMMANDS
+		notelib_sample_uint samples_until_next_position = samples_requested - samples_generated;
+		notelib_track_uint track_count = internals->track_count;
+		for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){
+			struct notelib_track* track_ptr = notelib_internals_get_track(internals, track_index);
+			if(track_ptr->tempo_ceil_interval_samples == 0)
+				continue;
+			notelib_position old_position = track_ptr->position;
+			notelib_sample_uint samples_until_next_position_on_track = notelib_track_get_tempo_interval(track_ptr, old_position, old_position+1) - track_ptr->position_sample_offset;
+			samples_until_next_position = MIN(samples_until_next_position, samples_until_next_position_on_track);
+		}
+
+		//GENERATE SAMPLES
+		for(notelib_instrument_uint instrument_index = 0; instrument_index < instrument_count; ++instrument_index){
+			struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(internals, instrument_index);
+			notelib_step_uint step_count = instrument_ptr->step_count;
+			if(step_count > 0){
+				notelib_channel_uint active_channel_count = still_active_channel_count[instrument_index];
+				if(active_channel_count > 0){
+					struct notelib_processing_step_entry* steps = notelib_instrument_get_processing_steps(internals, instrument_ptr);
+					notelib_instrument_state_uint channel_state_size = instrument_ptr->channel_state_size;
+					struct notelib_channel* channel_state_front = notelib_instrument_get_state_data(internals, instrument_ptr);
+					struct notelib_channel* channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front, (active_channel_count - 1) * channel_state_size, void*);
+					notelib_internals_execute_instrument_steps
+					(channel_state_front, channel_state_back, channel_state_size,
+					 step_count, steps,
+
+					 instrument_mix_buffer + samples_generated, channel_mix_buffer, samples_until_next_position,
+					 still_active_channel_count + instrument_index);
+				}
 			}
 		}
-	}
-	notelib_track_uint track_count = internals->track_count;
-	for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){
-		notelib_sample_uint samples_to_process_commands_for = samples_requested;
-		struct notelib_track* track_ptr = notelib_internals_get_track(internals, track_index);
-		if(track_ptr->tempo_ceil_interval_samples == 0)
-			continue;
-		bool should_check_for_updates = false;
-		notelib_position old_position = track_ptr->position;
-		notelib_position new_position = old_position;
-		notelib_sample_uint old_position_sample_offset = track_ptr->position_sample_offset;
-		notelib_sample_uint new_sample_offset;
-		cautiously_advance_track_position(track_ptr, &new_position, &new_sample_offset, old_position, old_position_sample_offset, &should_check_for_updates, samples_to_process_commands_for);
-		should_check_for_updates |= (old_position_sample_offset == 0);
-		if(should_check_for_updates){
+
+		//EXECUTE COMMANDS
+		for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){
+			struct notelib_track* track_ptr = notelib_internals_get_track(internals, track_index);
+			if(track_ptr->tempo_ceil_interval_samples == 0)
+				continue;
+			notelib_position old_position = track_ptr->position;
+			notelib_position new_position = old_position + 1;
+			notelib_sample_uint new_sample_offset = track_ptr->position_sample_offset + samples_until_next_position;
+			notelib_sample_uint tempo_distance_sample_count = notelib_track_get_tempo_interval(track_ptr, old_position, new_position);
+			if(new_sample_offset < tempo_distance_sample_count){
+				track_ptr->position_sample_offset = new_sample_offset;
+				continue;
+			}
+			if(new_sample_offset > tempo_distance_sample_count) //every command execution is (or should be) at the transition into the new position
+				fputs("ASSERTION FAILED: new_sample_offset > tempo_distance_sample_count!\n", stderr);
 			struct circular_buffer* command_queue_ptr = notelib_track_get_command_queue(track_ptr);
 			const struct notelib_command* command_ptr;
 			do{
 				command_ptr = circular_buffer_direct_read_commence(command_queue_ptr);
 			if(command_ptr == NULL) break;
-				notelib_position ceiled_old_position = old_position + (old_position_sample_offset > 0);
-				notelib_position new_position_ceiled = new_position + (new_sample_offset > 0);
 				notelib_position command_position = command_ptr->position;
-				if(command_position >= ceiled_old_position && command_position < new_position_ceiled){
-					switch(command_ptr->type){
-					case notelib_command_type_note:;
-						const struct notelib_command_note* note_command = &(command_ptr->note);
-						notelib_instrument_uint instrument_index = note_command->instrument_index;
-						struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
-						struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_state_buffer =
-							notelib_track_get_initialized_channel_buffer_ptr(internals, track_ptr);
-						notelib_instrument_state_uint channel_state_size = instrument->channel_state_size;
-						void* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
-						notelib_channel_uint* specific_still_active_channel_count = still_active_channel_count + instrument_index;
-						notelib_channel_uint last_channel_index = *specific_still_active_channel_count;
-						++*specific_still_active_channel_count;
-
-						struct notelib_channel* channel_state_ptr =
-							NOTELIB_INTERNAL_OFFSET_AND_CAST
-							(instrument_state_data,
-							 last_channel_index*channel_state_size,
-							 struct notelib_channel*);
-						channel_state_ptr->current_note_id = note_command->note_id;
-						circular_buffer_liberal_reader_unsynchronized_read
-						(initialized_channel_state_buffer,
-						 channel_state_size,
-						 channel_state_ptr->data);
-						notelib_sample_uint samples_leftover = new_sample_offset;
-						notelib_sample_uint samples_skipped = samples_requested - samples_leftover;
-						notelib_internals_execute_instrument_steps
-						(channel_state_ptr, channel_state_ptr, channel_state_size,
-						 instrument->step_count, notelib_instrument_get_processing_steps(internals, instrument),
-						 instrument_mix_buffer + samples_skipped, channel_mix_buffer + samples_skipped, samples_leftover,
-						  specific_still_active_channel_count);
-						break;
-					case notelib_command_type_reset:
-						old_position = 0;
-						old_position_sample_offset = 0;
-						new_sample_offset = notelib_track_get_tempo_interval(track_ptr, command_position, new_position);
-						new_position = notelib_track_get_position_change(track_ptr, old_position, new_sample_offset);
-						new_sample_offset -= notelib_track_get_tempo_interval(track_ptr, old_position, new_position);
-						track_ptr->position_sample_offset = new_sample_offset;
-						track_ptr->position = new_position;
-						break;
-					case notelib_command_type_set_tempo:;
-						notelib_sample_uint overlap = new_sample_offset + notelib_track_get_tempo_interval(track_ptr, command_position, new_position);
-						old_position = command_position;
-						old_position_sample_offset = 0;
-						const struct notelib_tempo* command_tempo = &command_ptr->tempo;
-						notelib_position command_tempo_ceil_interval = command_tempo->position_interval;
-						track_ptr->tempo_ceil_interval = command_tempo_ceil_interval;
-						if(command_tempo_ceil_interval == 0)
-							fputs("WARNING (notelib): Received halting set tempo command! (Ignoring...)\n", stderr);
-						else{
-							track_ptr->tempo_ceil_interval_samples = command_tempo->interval;
-							new_position = old_position + notelib_track_get_position_change(track_ptr, old_position, overlap);
-							new_sample_offset = overlap - notelib_track_get_tempo_interval(track_ptr, old_position, new_position);
-						}
-						track_ptr->position_sample_offset = new_sample_offset;
-						track_ptr->position = new_position;
-						break;
-					case notelib_command_type_trigger:;
-						const struct notelib_command_trigger* command_trigger = &command_ptr->trigger;
-						command_trigger->trigger_function(command_trigger->userdata);
-						break;
-					}
-					circular_buffer_direct_read_commit(command_queue_ptr);
-				}else
+			if(command_position > new_position) break;
+				switch(command_ptr->type){
+				case notelib_command_type_note:;
+					const struct notelib_command_note* note_command = &(command_ptr->note);
+					notelib_instrument_uint instrument_index = note_command->instrument_index;
+					struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
+					struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_state_buffer =
+						notelib_track_get_initialized_channel_buffer_ptr(internals, track_ptr);
+					notelib_instrument_state_uint channel_state_size = instrument->channel_state_size;
+					struct notelib_channel* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
+					notelib_channel_uint* specific_still_active_channel_count = still_active_channel_count + instrument_index;
+					notelib_channel_uint last_channel_index = *specific_still_active_channel_count;
+					++*specific_still_active_channel_count;
+					struct notelib_channel* channel_state_ptr =
+						NOTELIB_INTERNAL_OFFSET_AND_CAST
+						(instrument_state_data,
+						 last_channel_index*channel_state_size,
+						 struct notelib_channel*);
+					channel_state_ptr->current_note_id = note_command->note_id;
+					circular_buffer_liberal_reader_unsynchronized_read
+					(initialized_channel_state_buffer,
+					 channel_state_size,
+					 channel_state_ptr->data);
 					break;
+				case notelib_command_type_reset:
+					new_position = 0;
+					break;
+				case notelib_command_type_set_tempo:;
+					const struct notelib_tempo* command_tempo = &command_ptr->tempo;
+					notelib_position command_tempo_ceil_interval = command_tempo->position_interval;
+					notelib_sample_uint command_tempo_interval_samples = command_tempo->interval;
+					//TODO: to consider as future extension: command_tempo->interval == 0 could signal unchanged interval_samples (to only scale the position base tempo) - see also notelib_start_track
+					if(command_tempo_ceil_interval != 0 && command_tempo_interval_samples != 0){
+						track_ptr->tempo_ceil_interval = command_tempo_ceil_interval;
+						track_ptr->tempo_ceil_interval_samples = command_tempo_interval_samples;
+					}else
+						fputs("WARNING (notelib): Received halting set tempo command! (Ignoring...)\n", stderr);
+					break;
+				case notelib_command_type_trigger:;
+					const struct notelib_command_trigger* command_trigger = &command_ptr->trigger;
+					command_trigger->trigger_function(command_trigger->userdata);
+					break;
+				}
+				circular_buffer_direct_read_commit(command_queue_ptr);
 			}while(true);
+			track_ptr->position_sample_offset = 0;
+			track_ptr->position = new_position;
 		}
-	}
+
+		samples_generated += samples_until_next_position;
+	}while(samples_generated < samples_requested);
+
+	//OUTPUT PHASE
 #if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 	#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMCPY
 	memcpy(out, instrument_mix_buffer, sizeof(notelib_sample)*samples_requested);
@@ -371,11 +357,11 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 #endif//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 }
 
-void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_required){
+void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_requested){
 	notelib_instrument_uint instrument_count = internals->instrument_count;
 	//This VLA is a slight memory concern;
 	//being only 255 entries maximum most stacks should be able to handle it (and if you're using that many concurrent instruments you should be able to spare it anyway),
-	//but it might still be worth it adding a cache variable to struct notelib_isntrument directly.
+	//but it might still be worth it adding a cache variable to struct notelib_instrument directly.
 	notelib_channel_uint still_active_channel_count[instrument_count];
 	for(notelib_instrument_uint instrument_index = 0; instrument_index < instrument_count; ++instrument_index){
 		struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(internals, instrument_index);
@@ -385,8 +371,8 @@ void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_
 	notelib_sample_uint audio_buffer_size = internals->dual_buffer_size;
 	if(audio_buffer_size == 0)
 		return; //all hope lost, lol
-	notelib_sample_uint full_passes     = samples_required / audio_buffer_size;
-	notelib_sample_uint final_pass_size = samples_required % audio_buffer_size;
+	notelib_sample_uint full_passes     = samples_requested / audio_buffer_size;
+	notelib_sample_uint final_pass_size = samples_requested % audio_buffer_size;
 	for(notelib_sample_uint pass = 0; pass < full_passes; ++pass){
 		notelib_internals_fill_buffer_part(internals, out, audio_buffer_size, still_active_channel_count);
 		out += audio_buffer_size;

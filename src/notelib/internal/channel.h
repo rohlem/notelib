@@ -7,7 +7,7 @@
 #include <stdalign.h>
 
 #define NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT alignof(max_align_t)
-
+//TODO: optimization opportunity (probably behind preprocessor/config flag): link notes with tracks so we can safely generate bigger chunks of samples from less active tracks in notelib_internals_fill_buffer_part
 struct notelib_channel{
 	notelib_note_id_uint current_note_id;
 	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT) unsigned char data[];

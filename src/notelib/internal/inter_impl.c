@@ -186,6 +186,7 @@ enum notelib_status notelib_set_track_tempo
  notelib_track_uint track_index, notelib_position position,
  notelib_position tempo_interval,
  notelib_sample_uint tempo_interval_samples){
+	//TODO: to consider as future extension: command_tempo_interval_samples == 0 could signal unchanged interval samples (to only scale the position base tempo)
 	if(tempo_interval_samples == 0 || tempo_interval == 0)
 		return notelib_answer_failure_unknown;
 	struct notelib_command set_tempo_command;
