@@ -7,13 +7,12 @@
 
 notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track* track, notelib_position first_position, notelib_position last_position){
 	notelib_position tempo_ceil_interval = track->tempo_ceil_interval;
-	notelib_position first_position_aligned = first_position % tempo_ceil_interval;
+	notelib_position first_position_aligned = first_position    % tempo_ceil_interval;
+	notelib_position  last_position_aligned = (last_position-1) % tempo_ceil_interval + 1;
 	notelib_sample_uint tempo_ceil_interval_samples = track->tempo_ceil_interval_samples;
 	notelib_sample_uint samples_before_first_position = (((uint64_t)tempo_ceil_interval_samples) * first_position_aligned) / tempo_ceil_interval;
-	notelib_position last_position_aligned = last_position % tempo_ceil_interval;
-	notelib_sample_uint samples_after_last_position = (((uint64_t)tempo_ceil_interval_samples) * (tempo_ceil_interval - last_position_aligned)) / tempo_ceil_interval;
-	notelib_sample_uint remaining_samples = (1 + last_position/tempo_ceil_interval - first_position/tempo_ceil_interval) * tempo_ceil_interval_samples;
-	return remaining_samples - samples_before_first_position - samples_after_last_position;
+	notelib_sample_uint samples_before_last_position  = (((uint64_t)tempo_ceil_interval_samples) *  last_position_aligned) / tempo_ceil_interval;
+	return samples_before_last_position - samples_before_first_position;
 }
 
 //I'm about 85% sure that this implementation is correct. (Keep in mind that (currently) the "odd" samples are always floored, not rounded to nearest.)
