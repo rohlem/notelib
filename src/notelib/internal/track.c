@@ -4,8 +4,15 @@
 #include "internals.h"
 
 #include <stdint.h>
+#include <stdio.h>
 
 notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track* track, notelib_position first_position, notelib_position last_position){
+#ifdef NOTELIB_TRACK_GET_TEMPO_INTERVAL_DISABLE_ARGUMENT_CHECKING
+	if(first_position == last_position){
+		fputs("ASSERTION FAILED: first_position == last_position in notelib_track_get_tempo_interval! This should never happen!", stderr);
+		return 0;
+	}
+#endif//#ifdef NOTELIB_TRACK_GET_TEMPO_INTERVAL_DISABLE_ARGUMENT_CHECKING
 	notelib_position tempo_ceil_interval = track->tempo_ceil_interval;
 	notelib_position first_position_aligned = first_position    % tempo_ceil_interval;
 	notelib_position  last_position_aligned = (last_position-1) % tempo_ceil_interval + 1;

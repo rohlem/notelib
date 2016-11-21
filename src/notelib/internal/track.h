@@ -9,6 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+//#define NOTELIB_TRACK_GET_TEMPO_INTERVAL_DISABLE_ARGUMENT_CHECKING
+
 struct notelib_track{
 	ALIGNAS_MAX
 	(struct circular_buffer_liberal_reader_unsynchronized,
