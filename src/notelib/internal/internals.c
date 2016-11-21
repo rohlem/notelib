@@ -281,7 +281,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 						(initialized_channel_state_buffer,
 						 channel_state_size,
 						 channel_state_ptr);
-						notelib_sample_uint samples_leftover = new_sample_offset + notelib_track_get_tempo_interval(track_ptr, command_position, new_position);
+						notelib_sample_uint samples_leftover = new_sample_offset;
 						notelib_sample_uint samples_skipped = samples_requested - samples_leftover;
 						notelib_internals_execute_instrument_steps
 						(channel_state_ptr, channel_state_ptr, channel_state_size,
