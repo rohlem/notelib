@@ -153,25 +153,23 @@ void notelib_internals_execute_instrument_steps
  notelib_step_uint step_count, struct notelib_processing_step_entry* steps,
  notelib_sample* instrument_mix_buffer, notelib_sample* channel_mix_buffer, notelib_sample_uint samples_requested,
  notelib_channel_uint* active_channel_count_ptr){
-	bool forward = true;
-	bool next_forward = true;
-	goto channel_state_iter_skip_entry;
+	bool step;
+	goto some_skip_label;
 	do{
-		void* current_channel_state;
-		if(forward){
+		if(/*forward*/step){
 			channel_state_front = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front,  channel_state_size, void*);
-		channel_state_iter_skip_entry:
-			current_channel_state = channel_state_front;
 		}else{
-			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back,  -channel_state_size, void*);
-			current_channel_state = channel_state_back;
+			memcpy(channel_state_front, channel_state_back, channel_state_size);
+			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back, -channel_state_size, struct notelib_channel*);
+		some_skip_label:
+			step = true;
 		}
-		forward = next_forward;
 		struct notelib_processing_step_entry* current_step = steps;
-		notelib_sample_uint produced_samples = current_step->step(NULL, channel_mix_buffer, samples_requested, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+		void* current_channel_state_data = channel_state_front;
+		notelib_sample_uint produced_samples = current_step->step(NULL, channel_mix_buffer, samples_requested, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 		for(notelib_step_uint i = 1; i < step_count; ++i){
 			++current_step;
-			notelib_sample_uint newly_produced_samples = current_step->step(channel_mix_buffer, channel_mix_buffer, produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+			notelib_sample_uint newly_produced_samples = current_step->step(channel_mix_buffer, channel_mix_buffer, produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 			produced_samples = MIN(produced_samples, newly_produced_samples);
 		}
 		for(notelib_sample_uint sample_index = 0; sample_index < produced_samples; ++sample_index)
@@ -182,14 +180,9 @@ void notelib_internals_execute_instrument_steps
 				current_step = steps + step_index;
 				notelib_processing_step_cleanup_function cleanup = current_step->cleanup;
 				if(cleanup != NULL)
-					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 			}
-			next_forward = false;
-		}else if(!forward){
-			memcpy(channel_state_front, channel_state_back, channel_state_size);
-			void* channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back, -channel_state_size, void*);
-			forward = true;
-			next_forward = true;
+			step = false;
 		}
 	}while(channel_state_front != channel_state_back);
 }
