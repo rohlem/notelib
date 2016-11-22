@@ -153,41 +153,66 @@ void notelib_internals_execute_instrument_steps
  notelib_step_uint step_count, struct notelib_processing_step_entry* steps,
  notelib_sample* instrument_mix_buffer, notelib_sample* channel_mix_buffer, notelib_sample_uint samples_requested,
  notelib_channel_uint* active_channel_count_ptr){
-	void* current_channel_state_data;
-	bool at_back = false;
-	goto start_at_front;
-	do{
-		if(at_back){
-			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back,  -channel_state_size, void*);
-			current_channel_state_data = channel_state_back;
-		}else{
-			channel_state_front = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front,  channel_state_size, void*);
-		start_at_front:
-			current_channel_state_data = channel_state_front;
-		}
+	// general setup
+	struct notelib_processing_step_entry* steps_end = steps + step_count; //end iterator for steps array
+	bool at_back = false; //whether the current channel is at the back, moving backwards, looking for active channels to replace the dead front with
+	void* current_channel_state; //the channel that is currently being queried
+	void* previous_channel_state_back; //cache for unifying branches
+
+	// this once was a do-while-true with custom break points, but with two entry points it's not really worth it
+	loop_start_at_front: //initialization reused as assignment in loop entry
+		current_channel_state = channel_state_front;
+	loop_start_general:;
+		// first generate the samples by calling every step's step function
 		struct notelib_processing_step_entry* current_step = steps;
-		notelib_sample_uint produced_samples = current_step->step(NULL, channel_mix_buffer, samples_requested, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
-		for(notelib_step_uint i = 1; i < step_count; ++i){
-			++current_step;
-			notelib_sample_uint newly_produced_samples = current_step->step(channel_mix_buffer, channel_mix_buffer, produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
+		notelib_sample_uint produced_samples = samples_requested;
+		notelib_sample* filled_channel_mix_buffer = NULL; //the first step receives NULL as input buffer
+		do{
+			notelib_sample_uint newly_produced_samples =
+				current_step->step
+				(filled_channel_mix_buffer, channel_mix_buffer,
+				 produced_samples, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
 			produced_samples = MIN(produced_samples, newly_produced_samples);
-		}
+			++current_step;
+		if(current_step == steps_end) break;
+			filled_channel_mix_buffer = channel_mix_buffer; //further channels receive the channel_mix_buffer as input buffer
+		}while(true);
+
+		// add the generated samples to the general mix buffer
 		for(notelib_sample_uint sample_index = 0; sample_index < produced_samples; ++sample_index)
 			instrument_mix_buffer[sample_index] += channel_mix_buffer[sample_index];
-		if(produced_samples < samples_requested){
-			--*active_channel_count_ptr;
-			for(notelib_step_uint step_index = 0; step_index < step_count; ++step_index){
-				current_step = steps + step_index;
+
+		// if moving backwards
+		if(at_back){
+			previous_channel_state_back = channel_state_back; //make of the address to copy the instrument from, in case it is still alive
+			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back,  -channel_state_size, struct notelib_channel*); //move the back iterator
+		}
+		// distinguish and handle in-/active channels
+		if(produced_samples < samples_requested){ //now inactive
+			--*active_channel_count_ptr; //decrement number of active channels
+			// call every step's cleanup function, if the respective pointer is valid
+			current_step = steps;
+			do{
 				notelib_processing_step_cleanup_function cleanup = current_step->cleanup;
 				if(cleanup != NULL)
-					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
-			}
+					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state, current_step->data_offset, void*));
+				++current_step;
+			}while(current_step != steps_end);
+	if(channel_state_front == channel_state_back) return; //end if this was the last channel to handle, f.e. because we just reached the (already inactive) front again
+			// move to the back, because the front is now inactive
+			current_channel_state = channel_state_back;
 			at_back = true;
-		}else if(at_back){
-			memcpy(channel_state_front, channel_state_back, channel_state_size);
-			at_back = false;
+	goto loop_start_general; //continue with the next state (*current_channel_state)
+		}else{ //still active
+			if(at_back){ //if the front is inactive and we were looking for an still active replacement
+				memcpy(channel_state_front, previous_channel_state_back, channel_state_size); //replace by memcpy
+				at_back = false; //note that we now switch back to the front, so we don't care about the back anymore
+			}
+	if(channel_state_front == channel_state_back) return; //end if all active channels have been handled
+			channel_state_front = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front,  channel_state_size, struct notelib_channel*); //move the front iterator
+	goto loop_start_at_front; //continue with the front
 		}
-	}while(channel_state_front != channel_state_back);
+	//unreachable
 }
 
 void cautiously_advance_track_position
