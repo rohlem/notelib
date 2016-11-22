@@ -153,19 +153,19 @@ void notelib_internals_execute_instrument_steps
  notelib_step_uint step_count, struct notelib_processing_step_entry* steps,
  notelib_sample* instrument_mix_buffer, notelib_sample* channel_mix_buffer, notelib_sample_uint samples_requested,
  notelib_channel_uint* active_channel_count_ptr){
-	bool step;
-	goto some_skip_label;
+	void* current_channel_state_data;
+	bool at_back = false;
+	goto start_at_front;
 	do{
-		if(/*forward*/step){
-			channel_state_front = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front,  channel_state_size, void*);
+		if(at_back){
+			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back,  -channel_state_size, void*);
+			current_channel_state_data = channel_state_back;
 		}else{
-			memcpy(channel_state_front, channel_state_back, channel_state_size);
-			channel_state_back  = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_back, -channel_state_size, struct notelib_channel*);
-		some_skip_label:
-			step = true;
+			channel_state_front = NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_state_front,  channel_state_size, void*);
+		start_at_front:
+			current_channel_state_data = channel_state_front;
 		}
 		struct notelib_processing_step_entry* current_step = steps;
-		void* current_channel_state_data = channel_state_front;
 		notelib_sample_uint produced_samples = current_step->step(NULL, channel_mix_buffer, samples_requested, NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 		for(notelib_step_uint i = 1; i < step_count; ++i){
 			++current_step;
@@ -182,7 +182,10 @@ void notelib_internals_execute_instrument_steps
 				if(cleanup != NULL)
 					cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(current_channel_state_data, current_step->data_offset, void*));
 			}
-			step = false;
+			at_back = true;
+		}else if(at_back){
+			memcpy(channel_state_front, channel_state_back, channel_state_size);
+			at_back = false;
 		}
 	}while(channel_state_front != channel_state_back);
 }
