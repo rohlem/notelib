@@ -289,3 +289,21 @@ enum notelib_status notelib_play
 	free(channel_data_pre_write_buffer);
 	return notelib_answer_success;
 }
+enum notelib_status notelib_enqueue_trigger
+(notelib_state_handle notelib_state,
+ notelib_trigger_function trigger, void* userdata,
+ notelib_track_uint track_index, notelib_position position){
+	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
+	if(track_ptr->tempo_ceil_interval_samples == 0)
+		return notelib_answer_failure_invalid_track;
+
+	struct notelib_command trigger_command;
+	trigger_command.type = notelib_command_type_trigger;
+	trigger_command.trigger.trigger_function = trigger;
+	trigger_command.trigger.userdata = userdata;
+	trigger_command.position = position;
+	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &trigger_command))
+		return notelib_answer_failure_insufficient_command_queue_entries;
+
+	return notelib_answer_success;
+}

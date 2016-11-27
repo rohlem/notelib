@@ -71,6 +71,8 @@ struct notelib_processing_step_spec{
 struct notelib_instrument;
 typedef struct notelib_instrument* notelib_instrument_handle;
 
+typedef void (*notelib_trigger_function)(void* userdata);
+
 enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint* instrument_index_dest,
@@ -110,6 +112,10 @@ enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
+ notelib_track_uint track_index, notelib_position position);
+enum notelib_status notelib_enqueue_trigger
+(notelib_state_handle notelib_state,
+ notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position);
 
 /*notelib_step_uint notelib_instrument_get_step_count

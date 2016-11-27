@@ -343,6 +343,10 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 						track_ptr->position_sample_offset = new_sample_offset;
 						track_ptr->position = new_position;
 						break;
+					case notelib_command_type_trigger:;
+						const struct notelib_command_trigger* command_trigger = &command_ptr->trigger;
+						command_trigger->trigger_function(command_trigger->userdata);
+						break;
 					}
 					circular_buffer_direct_read_commit(command_queue_ptr);
 				}else

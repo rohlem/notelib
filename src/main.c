@@ -231,10 +231,36 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 	return start+8;
 }
 
+struct gen_data {
+	notelib_state_handle notelib_state;
+	notelib_position position;
+	notelib_sample_uint samples_per_second;
+	unsigned int part;
+} gen;
+
+void gen_play(void* gen_data_ptr){
+	struct gen_data* gen = (struct gen_data*) gen_data_ptr;
+	unsigned int part = gen->part;
+	gen->position = big_play(gen->samples_per_second, gen->position, part);
+	if(part < 17){
+		notelib_enqueue_trigger(gen->notelib_state, gen_play, gen_data_ptr, track_id, gen->position);
+		++gen->part;
+	}
+}
+
+struct combined_step_data{
+	struct limit_data;
+	struct sine_step_data;
+};
+
+#include "notelib/internal/internals.h"
+
 int main(){
 	//return test_circular_buffer();
 	//return test_circular_buffer_liberal_reader_unsynchronized();
 	//return test_notelib_internals();
+
+	const size_t channel_state_size = sizeof(struct combined_step_data);
 
 //	printf("#RealExpense %d + %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data));
 
@@ -244,9 +270,11 @@ int main(){
 		.reserved_inline_state_space = 30,
 		.internal_dual_buffer_size = 576,
 		.track_count = 1,
-		.queued_command_count = 80,
-		.reserved_inline_initialized_channel_buffer_size = 1184
+		.queued_command_count = 8,
+		.reserved_inline_initialized_channel_buffer_size = 12*channel_state_size
 	};
+
+	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
 
 	struct pa_back_init_data init_ret = pa_back_notelib_initialize(&params);
 	switch(init_ret.error.error_type){
@@ -280,7 +308,7 @@ int main(){
 			.cleanup = NULL
 		}
 	};
-	enum notelib_status ns = notelib_register_instrument(pa_back_notelib_handle, &instrument_id, 2, instrument_steps, 16);
+	enum notelib_status ns = notelib_register_instrument(pa_back_notelib_handle, &instrument_id, 2, instrument_steps, channel_state_size);
 	if(ns != notelib_status_ok){
 		printf("Failed to register instrument!\n");
 		goto end;
@@ -289,7 +317,7 @@ int main(){
 
 //	printf("SAMP %d\n", (int)samples_per_second);
 
-	ns = notelib_start_track(pa_back_notelib_handle, &track_id, 1184, 8, samples_per_second);
+	ns = notelib_start_track(pa_back_notelib_handle, &track_id, 12*channel_state_size, 8, samples_per_second);
 	if(ns != notelib_status_ok){
 		printf("Failed to start track!\n");
 		goto end;
@@ -300,9 +328,12 @@ int main(){
 	play((struct instrument_setup_data){l8, s0}, 8);
 */
 
-	notelib_position position = 10;
-	for(unsigned int part = 0; part < 18; ++part)
-		position = big_play(samples_per_second, position, part);
+	gen.notelib_state = pa_back_notelib_handle;
+	gen.position = 10;
+	gen.samples_per_second = samples_per_second;
+	gen.part = 0;
+
+	gen_play(&gen);
 
 	system("pause");
 end:;
