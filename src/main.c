@@ -91,11 +91,6 @@ void sine_setup(void* trigger_data, void* state_data){
 	step->position = 0;
 }
 
-void cleanup(void* state){
-	struct sine_step_data* data = state;
-//	printf("Cleaned up with frequency %f\n amplitude: %d\n position: %d\n", (float)data->frequency, (int)data->amplitude, (int)data->position);
-}
-
 /*
 notelib_sample_uint step(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state);
 void setup(void* trigger_data, void* state_data);
