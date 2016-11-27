@@ -241,8 +241,12 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 	notelib_sample* instrument_mix_buffer = out;
 #endif//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 	uint16_t dual_buffer_size = internals->dual_buffer_size;
+#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMSET
+	memset(instrument_mix_buffer, 0, sizeof(notelib_sample)*dual_buffer_size);
+#else//#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMSET
 	for(uint16_t i = 0; i < dual_buffer_size; ++i)
 		instrument_mix_buffer[i] = 0;
+#endif//#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMSET
 #if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 	notelib_sample* channel_mix_buffer = instrument_mix_buffer + internals->dual_buffer_size;
 #else//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
@@ -355,8 +359,12 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 		}
 	}
 #if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
+	#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMCPY
+	memcpy(out, instrument_mix_buffer, sizeof(notelib_sample)*samples_requested);
+	#else//#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMCPY
 	for(notelib_sample_uint sample_index = 0; sample_index < samples_requested; ++sample_index)
 		out[sample_index] = instrument_mix_buffer[sample_index];
+	#endif//#if NOTELIB_INTERNAL_USE_EXPLICIT_MEMCPY
 #endif//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 }
 
