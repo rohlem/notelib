@@ -117,7 +117,7 @@ enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
 	for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){
 		struct notelib_track* track_ptr = notelib_internals_get_track(internals, track_index);
 		if(!notelib_track_is_initialized_channel_buffer_internal(internals, track_ptr))
-			free(notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, internals->command_queue_size));
+			free(*notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, internals->command_queue_size));
 		track_ptr->tempo_ceil_interval_samples = 0;
 	}
 	notelib_instrument_uint instrument_count = internals->instrument_count;
