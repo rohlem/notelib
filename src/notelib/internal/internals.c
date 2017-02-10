@@ -15,6 +15,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../util/eclipse_codan_fix.hpp"
+
 size_t notelib_internals_offsetof_dual_audio_buffer(notelib_instrument_uint instrument_count, uint16_t instrument_size)
 	{return
 		 NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF

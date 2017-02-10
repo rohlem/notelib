@@ -10,6 +10,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "../util/eclipse_codan_fix.hpp"
+
 #define NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT alignof(max_align_t)
 
 //"abstract" (not usable solely on its own) "base"/common type of notelib_instrument_inline_steps and notelib_instrument_external_steps

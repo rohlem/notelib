@@ -14,6 +14,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include "../util/eclipse_codan_fix.hpp"
+
 //could possibly optimize to single realloc call in certain cases
 enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
