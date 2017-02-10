@@ -1,6 +1,10 @@
 #ifndef NOTELIB_NOTELIB_H_
 #define NOTELIB_NOTELIB_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif//#ifdef __cplusplus
+
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -120,5 +124,9 @@ enum notelib_status notelib_enqueue_trigger
 
 /*notelib_step_uint notelib_instrument_get_step_count
 (notelib_state_handle notelib_state, notelib_instrument_handle handle);*/
+
+#ifdef __cplusplus
+}
+#endif//#ifdef __cplusplus
 
 #endif//#ifndef NOTELIB_NOTELIB_H_
