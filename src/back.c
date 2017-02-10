@@ -22,11 +22,11 @@ int pa_back_callback
  void *userData){
 	notelib_state_handle notelib_state = userData;
 	notelib_sample* out = output;
-	static unsigned long static_frame_count = 0;
+/*	static unsigned long static_frame_count = 0;
 	if(frameCount != static_frame_count){
 		printf("\npa_back_callback: frameCount is now %d\n", (int)frameCount);
 		static_frame_count = frameCount;
-	}
+	}*/
 	while(frameCount > 0){
 		notelib_sample_uint sample_count;
 		if(frameCount > NOTELIB_SAMPLE_UINT_MAX){
