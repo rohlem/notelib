@@ -12,8 +12,9 @@
 //#define NOTELIB_TRACK_GET_TEMPO_INTERVAL_DISABLE_ARGUMENT_CHECKING
 
 struct notelib_track{
-	ALIGNAS_MAX
-	(struct circular_buffer_liberal_reader_unsynchronized,
+	ALIGNAS_MAX3
+	(struct circular_buffer,
+	 struct circular_buffer_liberal_reader_unsynchronized,
 	 struct circular_buffer_liberal_reader_unsynchronized*)
 	notelib_position tempo_ceil_interval;
 	notelib_position position;

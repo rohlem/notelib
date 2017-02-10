@@ -6,9 +6,10 @@
 #include "alignment_utilities.h"
 #include "circular_buffer.h"
 #include "instrument.h"
+#include "track.h"
 
 struct notelib_internals{
-	ALIGNAS_MAX(struct notelib_instrument, struct circular_buffer)
+	ALIGNAS_MAX3(struct notelib_instrument, struct circular_buffer, struct notelib_track)
 	notelib_instrument_uint instrument_count;
 	uint8_t inline_step_count;
 	uint16_t reserved_inline_state_space;
