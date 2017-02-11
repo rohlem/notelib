@@ -85,6 +85,8 @@ size_t notelib_internals_size_requirements(const struct notelib_params* params)
 enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params){
 	if(space_available < notelib_internals_size_requirements(params))
 		return notelib_answer_failure_unknown;
+	if(params->regular_track_count == 0)
+		return notelib_answer_failure_unknown;
 	struct notelib_internals* internals = position;
 	notelib_instrument_uint instrument_count = params->instrument_count;
 	internals->instrument_count  = instrument_count;
