@@ -5,6 +5,8 @@
 // (!!!OBVIOUSLY COMMENT THESE BACK OUT BEFORE ACTUALLY BUILDING THE LIBRARY(/ TEST PROGRAMS)!!!)
 
 /*
+#include <stdatomic.h>
+
 #define _Atomic
 #define _Alignas(ARG)
 
