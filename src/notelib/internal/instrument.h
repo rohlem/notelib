@@ -20,7 +20,7 @@ struct notelib_instrument{
 	notelib_note_id_uint next_note_id;
 	_Atomic notelib_channel_uint active_channel_count;
 	notelib_channel_uint channel_count;
-	notelib_instrument_state_uint channel_state_size;
+	notelib_instrument_state_uint channel_data_size;
 	notelib_step_uint step_count;
 	//union of struct notelib_processing_step_entry* steps and struct notelib_processing_step_entry inline_steps[] ; size in no way enforced
 	//union of struct notelib_channel* external_state and struct notelib_channel inline_state[] ; size in no way enforced
@@ -86,7 +86,7 @@ struct notelib_channel*  notelib_instrument_get_inline_state_data_after_external
 
 struct notelib_channel* notelib_instrument_get_state_data(const struct notelib_internals* internals, struct notelib_instrument* instrument);
 
-struct notelib_channel** notelib_instrument_get_external_state_data_ptr(struct notelib_instrument* instrument, bool processing_steps_inline);
+struct notelib_channel** notelib_instrument_get_external_state_data_ptr_ptr(struct notelib_instrument* instrument, bool processing_steps_inline);
 
 notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_instrument*);
 

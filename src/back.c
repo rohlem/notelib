@@ -20,6 +20,9 @@ int pa_back_callback
  const PaStreamCallbackTimeInfo* timeInfo,
  PaStreamCallbackFlags statusFlags,
  void *userData){
+	(void)input;
+	(void)timeInfo;
+	(void)statusFlags;
 	notelib_state_handle notelib_state = userData;
 	notelib_sample* out = output;
 /*	static unsigned long static_frame_count = 0;

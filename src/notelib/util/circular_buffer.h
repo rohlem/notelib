@@ -1,6 +1,8 @@
 #ifndef NOTELIB_UTIL_CIRCULAR_BUFFER_H_
 #define NOTELIB_UTIL_CIRCULAR_BUFFER_H_
 
+#include "../internal/circular_buffer.h"
+
 #include <stdalign.h>
 #include <stdbool.h>
 #include <stddef.h>

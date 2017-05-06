@@ -16,11 +16,16 @@ enum notelib_status{
 
 	notelib_answer_failure_bad_alloc,
 
+	notelib_answer_failure_no_tracks,
+
 	notelib_answer_failure_invalid_instrument,
 	notelib_answer_failure_invalid_track,
 
 	notelib_answer_failure_insufficient_initialized_channel_buffer_space,
 	notelib_answer_failure_insufficient_command_queue_entries,
+
+	notelib_answer_failure_invalid_track_parameters_stopped,
+	notelib_answer_failure_no_track_available,
 
 	notelib_status_not_ok = ~0
 };
@@ -30,12 +35,13 @@ typedef void* notelib_state_handle;
 typedef uint8_t  notelib_instrument_uint;
 typedef uint16_t notelib_channel_uint;
 typedef uint16_t notelib_note_id_uint;
-typedef uint16_t notelib_instrument_state_uint;
+typedef uint16_t notelib_instrument_state_uint; //only needs to be able to contain largest struct notelib_channel.data's size
 typedef uint16_t notelib_step_uint;
 typedef  int16_t notelib_sample;
 typedef uint32_t notelib_sample_uint;
 #define NOTELIB_SAMPLE_UINT_MAX UINT32_MAX
 typedef uint8_t notelib_track_uint;
+#define NOTELIB_TRACK_UINT_MAX UINT8_MAX
 typedef uint16_t notelib_position; //uint32_t probably won't really make sense, but feel free to change it
 
 struct notelib_params{
@@ -43,7 +49,12 @@ struct notelib_params{
 	uint8_t inline_step_count;
 	uint16_t reserved_inline_state_space;
 	uint16_t internal_dual_buffer_size;
-	notelib_track_uint track_count;
+#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+	uint16_t queued_immediate_command_count;
+	uint16_t reserved_inline_immediate_initialized_channel_buffer_size;
+	uint16_t initial_immediate_initialized_channel_buffer_size;
+#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+	notelib_track_uint regular_track_count;
 	uint16_t queued_command_count;
 	uint16_t reserved_inline_initialized_channel_buffer_size;
 };

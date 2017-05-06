@@ -59,8 +59,8 @@ instrument_index_found:
 		steps_ptr[step_index].setup = steps[step_index].setup;
 		steps_ptr[step_index].cleanup = steps[step_index].cleanup;
 	}
-	notelib_instrument_state_uint channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(state_offset);
-	instrument->channel_state_size = channel_state_size;
+	instrument->channel_data_size = state_offset;
+	size_t channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(state_offset);
 	instrument->channel_count = channel_count;
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument)){
 		void* state_data = malloc(channel_count * channel_state_size);
@@ -70,7 +70,7 @@ instrument_index_found:
 			instrument->step_count = 0;
 			return notelib_answer_failure_unknown;
 		}
-		*notelib_instrument_get_external_state_data_ptr(instrument, processing_steps_inline) = state_data;
+		*notelib_instrument_get_external_state_data_ptr_ptr(instrument, processing_steps_inline) = state_data;
 	}
 	return notelib_answer_success;
 }
@@ -83,18 +83,18 @@ enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle no
 	bool processing_steps_inline = notelib_instrument_are_processing_steps_inline(notelib_state, instrument_ptr);
 	void* ptr_to_free;
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument_ptr))
-		ptr_to_free = *notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline);
+		ptr_to_free = *notelib_instrument_get_external_state_data_ptr_ptr(instrument_ptr, processing_steps_inline);
 	else
 		ptr_to_free = NULL;
 	notelib_channel_uint channel_count_before = instrument_ptr->channel_count;
 	instrument_ptr->channel_count = channel_count;
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument_ptr)){
-		void* state_data = malloc(channel_count * instrument_ptr->channel_state_size);
+		void* state_data = malloc(channel_count * NOTELIB_CHANNEL_SIZEOF_SINGLE(instrument_ptr->channel_data_size));
 		if(state_data == NULL){
 			instrument_ptr->channel_count = channel_count_before;
 			return notelib_answer_failure_unknown;
 		}
-		*notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline) = state_data;
+		*notelib_instrument_get_external_state_data_ptr_ptr(instrument_ptr, processing_steps_inline) = state_data;
 	}
 	//if(ptr_to_free != NULL)
 	free(ptr_to_free);
@@ -109,7 +109,7 @@ enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_s
 	if(!processing_steps_inline)
 		free(((struct notelib_instrument_external_steps*)instrument_ptr)->external_steps);
 	if(!notelib_instrument_is_state_data_inline(notelib_state, instrument_ptr))
-		free(*notelib_instrument_get_external_state_data_ptr(instrument_ptr, processing_steps_inline));
+		free(*notelib_instrument_get_external_state_data_ptr_ptr(instrument_ptr, processing_steps_inline));
 	instrument_ptr->step_count = 0;
 	return notelib_answer_success;
 }
@@ -117,18 +117,18 @@ enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_s
 //TODO: For concurrency to be safe there has to be some sort of trigger for starting to query a track coming from the client thread. Implement that somehow!
 enum notelib_status notelib_start_track
 (notelib_state_handle notelib_state, notelib_track_uint* track_index_dest, uint32_t initialized_channel_buffer_size, notelib_position tempo_interval, notelib_sample_uint tempo_interval_samples){
-	if(tempo_interval == 0 || tempo_interval_samples == 0)
-		return notelib_answer_failure_unknown;
+	if(tempo_interval_samples == 0)
+		return notelib_answer_failure_invalid_track_parameters_stopped;
 	struct notelib_internals* internals = (struct notelib_internals*)notelib_state;
 	notelib_track_uint track_count = internals->track_count;
 	struct notelib_track* track_ptr;
 	notelib_track_uint track_index;
 	for(track_index = 0; track_index < track_count; ++track_index){
-		track_ptr = notelib_internals_get_track(notelib_state, track_index);
-		if(track_ptr->tempo_ceil_interval_samples == 0)
+		track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+		if(notelib_track_is_disabled(track_ptr))
 			goto track_found;
 	}
-	return notelib_answer_failure_unknown;
+	return notelib_answer_failure_no_track_available;
 track_found:;
 	track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
 	bool initialized_channel_buffer_inline = notelib_track_is_initialized_channel_buffer_internal(internals, track_ptr);
@@ -138,8 +138,10 @@ track_found:;
 	size_t command_queue_size = internals->command_queue_size;
 	if(!initialized_channel_buffer_inline){
 		initialized_channel_buffer_position = malloc(circular_initialized_channel_buffer_size);
-		if(initialized_channel_buffer_position == NULL)
-			return notelib_answer_failure_unknown;
+		if(initialized_channel_buffer_position == NULL){
+			notelib_track_disable(track_ptr);
+			return notelib_answer_failure_bad_alloc;
+		}
 		ptr_to_free_at_failure = initialized_channel_buffer_position;
 	}else{
 		ptr_to_free_at_failure = NULL;
@@ -169,16 +171,16 @@ track_found:;
 	track_ptr->tempo_ceil_interval = tempo_interval;
 	track_ptr->tempo_ceil_interval_samples = tempo_interval_samples;
 	if(!initialized_channel_buffer_inline)
-		*notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size) = initialized_channel_buffer_position;
+		*notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size) = initialized_channel_buffer_position;
 
 	*track_index_dest = track_index;
 	return notelib_answer_success;
 }
 enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
 	struct notelib_command reset_command;
-	reset_command.type = notelib_command_type_reset;
+	reset_command.data.type = notelib_command_type_reset;
 	reset_command.position = position;
-	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_track(notelib_state, track_index)), &reset_command))
+	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_regular_track(notelib_state, track_index)), &reset_command))
 		return notelib_answer_success;
 	else
 		return notelib_answer_failure_unknown;
@@ -189,14 +191,14 @@ enum notelib_status notelib_set_track_tempo
  notelib_position tempo_interval,
  notelib_sample_uint tempo_interval_samples){
 	//TODO: to consider as future extension: command_tempo_interval_samples == 0 could signal unchanged interval samples (to only scale the position base tempo)
-	if(tempo_interval_samples == 0 || tempo_interval == 0)
+	if(tempo_interval_samples == 0)
 		return notelib_answer_failure_unknown;
 	struct notelib_command set_tempo_command;
-	set_tempo_command.type = notelib_command_type_set_tempo;
-	set_tempo_command.tempo.position_interval = tempo_interval;
-	set_tempo_command.tempo.interval = tempo_interval_samples;
+	set_tempo_command.data.type = notelib_command_type_set_tempo;
+	set_tempo_command.data.tempo.position_interval = tempo_interval;
+	set_tempo_command.data.tempo.interval = tempo_interval_samples;
 	set_tempo_command.position = position;
-	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_track(notelib_state, track_index)), &set_tempo_command))
+	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_regular_track(notelib_state, track_index)), &set_tempo_command))
 		return notelib_answer_success;
 	else
 		return notelib_answer_failure_unknown;
@@ -205,13 +207,13 @@ enum notelib_status notelib_set_track_initialized_channel_buffer_size
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index,
  uint32_t initialized_channel_buffer_size){
-	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
 	void* ptr_to_free;
 	uint16_t command_queue_size = ((struct notelib_internals*)notelib_state)->command_queue_size;
 	if(notelib_track_is_initialized_channel_buffer_internal(notelib_state, track_ptr))
 		ptr_to_free = NULL;
 	else
-		ptr_to_free = *notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size);
+		ptr_to_free = notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size);
 	uint32_t initialized_channel_buffer_size_before = track_ptr->initialized_channel_buffer_size;
 	track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
 	if(notelib_track_is_initialized_channel_buffer_internal(notelib_state, track_ptr)){
@@ -228,17 +230,17 @@ enum notelib_status notelib_set_track_initialized_channel_buffer_size
 			track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size_before;
 			return notelib_status_not_ok;
 		}
-		*notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size) = constructed_initialized_channel_buffer;
+		*notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size) = constructed_initialized_channel_buffer;
 	}
 	free(ptr_to_free);
 	return notelib_answer_success;
 }
 enum notelib_status notelib_stop_track(notelib_state_handle notelib_state, notelib_track_uint track_index){
-	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
-	if(track_ptr->tempo_ceil_interval_samples != 0){
-		track_ptr->tempo_ceil_interval_samples = 0;
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+	if(!notelib_track_is_disabled(track_ptr)){
+		notelib_track_disable(track_ptr);
 		if(!notelib_track_is_initialized_channel_buffer_internal(notelib_state, track_ptr))
-			free(*notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, ((struct notelib_internals*)notelib_state)->command_queue_size));
+			free(notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, ((struct notelib_internals*)notelib_state)->command_queue_size));
 	}
 	return notelib_answer_success;
 }
@@ -249,8 +251,8 @@ enum notelib_status notelib_play
  void* trigger_data,
  notelib_track_uint track_index, notelib_position position,
  notelib_note_id_uint* note_id_target){
-	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
-	if(track_ptr->tempo_ceil_interval_samples == 0)
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+	if(notelib_track_is_disabled(track_ptr))
 		return notelib_answer_failure_invalid_track;
 	struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_buffer = notelib_track_get_initialized_channel_buffer_ptr(notelib_state, track_ptr);
 	struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(notelib_state, instrument_index);
@@ -258,8 +260,8 @@ enum notelib_status notelib_play
 	if(step_count == 0)
 		return notelib_answer_failure_invalid_instrument;
 
-	notelib_instrument_state_uint channel_state_size = instrument_ptr->channel_state_size;
-	void* channel_data_pre_write_buffer = malloc(channel_state_size);
+	notelib_instrument_state_uint channel_data_size = instrument_ptr->channel_data_size;
+	void* channel_data_pre_write_buffer = malloc(channel_data_size);
 	if(channel_data_pre_write_buffer == NULL)
 		return notelib_answer_failure_bad_alloc;
 	struct notelib_processing_step_entry* steps_ptr = notelib_instrument_get_processing_steps(notelib_state, instrument_ptr);
@@ -271,19 +273,25 @@ enum notelib_status notelib_play
 			(NOTELIB_INTERNAL_OFFSET_AND_CAST(trigger_data,                  step->trigger_data_offset, void*),
 			 NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_data_pre_write_buffer, step->data_offset,         void*));
 	}
-	if(!circular_buffer_liberal_reader_unsynchronized_write(initialized_channel_buffer, channel_data_pre_write_buffer, channel_state_size)){
+	if(!circular_buffer_liberal_reader_unsynchronized_write(initialized_channel_buffer, channel_data_pre_write_buffer, channel_data_size)){
+		for(notelib_step_uint i = 0; i < step_count; ++i){
+			struct notelib_processing_step_entry* step = steps_ptr + i;
+			notelib_processing_step_cleanup_function cleanup = step->cleanup;
+			if(cleanup != NULL)
+				cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_data_pre_write_buffer, step->data_offset, void*));
+		}
 		free(channel_data_pre_write_buffer);
 		return notelib_answer_failure_insufficient_initialized_channel_buffer_space;
 	}
 
 	struct notelib_command play_note_command;
-	play_note_command.type = notelib_command_type_note;
-	play_note_command.note.instrument_index = instrument_index;
+	play_note_command.data.type = notelib_command_type_note;
+	play_note_command.data.note.instrument_index = instrument_index;
 	notelib_note_id_uint note_id = notelib_instrument_get_next_note_id(instrument_ptr);
 	//could split up get and increment of note_id and only increment if command_queue write was successful
 	 //+ help performance in the case of error (which is not a priority)
 	 //- possibly hurt data access locality? Can fetch-post-increment optimization be expected?
-	play_note_command.note.note_id = note_id;
+	play_note_command.data.note.note_id = note_id;
 	if(note_id_target != NULL)
 		*note_id_target = note_id;
 	play_note_command.position = position;
@@ -294,7 +302,7 @@ enum notelib_status notelib_play
 			if(cleanup != NULL)
 				cleanup(NOTELIB_INTERNAL_OFFSET_AND_CAST(channel_data_pre_write_buffer, step->data_offset, void*));
 		}
-		if(!circular_buffer_liberal_reader_unsynchronized_unwrite(initialized_channel_buffer, channel_state_size))
+		if(!circular_buffer_liberal_reader_unsynchronized_unwrite(initialized_channel_buffer, channel_data_size))
 			return notelib_status_not_ok;
 		free(channel_data_pre_write_buffer);
 		return notelib_answer_failure_insufficient_command_queue_entries;
@@ -307,14 +315,14 @@ enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position){
-	struct notelib_track* track_ptr = notelib_internals_get_track(notelib_state, track_index);
-	if(track_ptr->tempo_ceil_interval_samples == 0)
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+	if(notelib_track_is_disabled(track_ptr))
 		return notelib_answer_failure_invalid_track;
 
 	struct notelib_command trigger_command;
-	trigger_command.type = notelib_command_type_trigger;
-	trigger_command.trigger.trigger_function = trigger;
-	trigger_command.trigger.userdata = userdata;
+	trigger_command.data.type = notelib_command_type_trigger;
+	trigger_command.data.trigger.trigger_function = trigger;
+	trigger_command.data.trigger.userdata = userdata;
 	trigger_command.position = position;
 	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &trigger_command))
 		return notelib_answer_failure_insufficient_command_queue_entries;

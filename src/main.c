@@ -2,13 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if 0
+
 //#include "test/test_circular_buffer.h"
 //#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"
-/*#include "test/test_notelib_internals.h"
+#include "test/test_notelib_internals.h"
 
 int main(void)
 	{return (test_notelib_internals() == EXIT_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;}
-*/
+#else
 
 #include "notelib/notelib.h"
 #include "back.h"
@@ -52,6 +54,8 @@ notelib_sample_uint limit_step(notelib_sample* in, notelib_sample* out, notelib_
 	return samples_generated;
 }
 notelib_sample_uint limit_step2(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state){
+	(void)in;
+	(void)out;
 	struct limit_data* data = state;
 	if(data->lifespan > samples_requested){
 		data->lifespan -= samples_requested;
@@ -76,6 +80,7 @@ struct sine_step_data{
 	float frequency;
 };
 notelib_sample_uint sine_step(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state){
+	(void)in;
 	struct sine_step_data* data = state;
 	notelib_sample_uint position = data->position;
 	for(notelib_sample_uint i = 0; i < samples_requested; ++i){
@@ -150,6 +155,7 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 	struct limit_data l4 = {.lifespan = samples_per_second/4};
 	struct limit_data l2 = {.lifespan = samples_per_second/2};
 	struct limit_data l1 = {.lifespan = samples_per_second/1};
+	(void)l1;
 
 	struct sine_setup_data s0 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 0};
 	struct sine_setup_data s1 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 2};
@@ -185,6 +191,7 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 	case  6:
 	case 14:
 		play((struct instrument_setup_data){l8, s2}, start+0);
+		;//fallthrough
 	case 15:
 	case 16:
 		play((struct instrument_setup_data){l8, s2}, start+1);
@@ -274,12 +281,17 @@ int main(){
 		.inline_step_count = 2,
 		.reserved_inline_state_space = 30,
 		.internal_dual_buffer_size = 576,
-		.track_count = 1,
+#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+		.queued_immediate_command_count = 0,
+		.reserved_inline_immediate_initialized_channel_buffer_size = 0,
+		.initial_immediate_initialized_channel_buffer_size = 0,
+#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+		.regular_track_count = 1,
 		.queued_command_count = 8,
 		.reserved_inline_initialized_channel_buffer_size = 12*channel_state_size
 	};
 
-	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
+//	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
 
 	struct pa_back_init_data init_ret = pa_back_notelib_initialize(&params);
 	switch(init_ret.error.error_type){
@@ -358,3 +370,4 @@ end:;
 	}
 	return EXIT_SUCCESS;
 }
+#endif
