@@ -115,10 +115,3 @@ struct notelib_channel** notelib_instrument_get_external_state_data_ptr_ptr(stru
 	else
 		return &((struct notelib_instrument_external_steps_external_state*)instrument)->external_state;
 }
-
-notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_instrument* instrument){
-	notelib_note_id_uint* next_note_id_ptr = &(instrument->next_note_id);
-	notelib_note_id_uint note_id = *next_note_id_ptr;
-	++(*next_note_id_ptr);
-	return note_id;
-}

@@ -10,7 +10,8 @@ struct notelib_command_data{
 		notelib_command_type_reset,
 		notelib_command_type_set_tempo,
 
-		notelib_command_type_trigger
+		notelib_command_type_trigger,
+		notelib_command_type_alter
 	} type;
 	union{
 		struct notelib_command_note{
@@ -25,6 +26,11 @@ struct notelib_command_data{
 			notelib_trigger_function trigger_function;
 			void* userdata;
 		} trigger;
+		struct notelib_command_alter{
+			notelib_note_id_uint note_id; //possible optimization: put note_id into initialized_channel_buffer (in-place), memcpy state_size instead of data_size (desirable?)
+			notelib_alter_function alter_function;
+			void* userdata;
+		} alter;
 	};
 };
 struct notelib_command{

@@ -17,7 +17,6 @@
 //"abstract" (not usable solely on its own) "base"/common type of notelib_instrument_inline_steps and notelib_instrument_external_steps
 struct notelib_instrument{
 	alignas(NOTELIB_INSTRUMENT_STATE_DATA_ALIGNMENT)
-	notelib_note_id_uint next_note_id;
 	_Atomic notelib_channel_uint active_channel_count;
 	notelib_channel_uint channel_count;
 	notelib_instrument_state_uint channel_data_size;
@@ -87,7 +86,5 @@ struct notelib_channel*  notelib_instrument_get_inline_state_data_after_external
 struct notelib_channel* notelib_instrument_get_state_data(const struct notelib_internals* internals, struct notelib_instrument* instrument);
 
 struct notelib_channel** notelib_instrument_get_external_state_data_ptr_ptr(struct notelib_instrument* instrument, bool processing_steps_inline);
-
-notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_instrument*);
 
 #endif//#ifndef NOTELIB_INTERNAL_INSTRUMENT_H_

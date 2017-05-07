@@ -88,6 +88,7 @@ struct notelib_instrument;
 typedef struct notelib_instrument* notelib_instrument_handle;
 
 typedef void (*notelib_trigger_function)(void* userdata);
+typedef void (*notelib_alter_function)(void* channel_state, void* userdata);
 
 enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
@@ -133,6 +134,11 @@ enum notelib_status notelib_play
 enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
+ notelib_track_uint track_index, notelib_position position);
+enum notelib_status notelib_alter
+(notelib_state_handle notelib_state,
+ notelib_alter_function alter, void* userdata,
+ notelib_instrument_uint note_id,
  notelib_track_uint track_index, notelib_position position);
 
 /*notelib_step_uint notelib_instrument_get_step_count

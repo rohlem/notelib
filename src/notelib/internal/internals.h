@@ -10,6 +10,7 @@
 
 struct notelib_internals{
 	ALIGNAS_MAX3(struct notelib_instrument, struct circular_buffer, struct notelib_track)
+	notelib_note_id_uint next_note_id; //accessed strictly client-side (see inter_impl.c)
 	notelib_instrument_uint instrument_count;
 	uint8_t inline_step_count;
 	uint16_t reserved_inline_state_space;
@@ -27,6 +28,8 @@ struct notelib_internals{
 };
 
 static const size_t notelib_internals_offsetof_instruments = NOTELIB_INTERNAL_PAD_SIZEOF(struct notelib_internals, struct notelib_instrument);
+
+notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_internals*);
 
 size_t notelib_internals_offsetof_dual_audio_buffer(notelib_instrument_uint instrument_count, uint16_t instrument_size);
 

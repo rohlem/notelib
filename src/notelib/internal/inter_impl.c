@@ -287,7 +287,7 @@ enum notelib_status notelib_play
 	struct notelib_command play_note_command;
 	play_note_command.data.type = notelib_command_type_note;
 	play_note_command.data.note.instrument_index = instrument_index;
-	notelib_note_id_uint note_id = notelib_instrument_get_next_note_id(instrument_ptr);
+	notelib_note_id_uint note_id = notelib_get_next_note_id(notelib_state);
 	//could split up get and increment of note_id and only increment if command_queue write was successful
 	 //+ help performance in the case of error (which is not a priority)
 	 //- possibly hurt data access locality? Can fetch-post-increment optimization be expected?
@@ -307,6 +307,7 @@ enum notelib_status notelib_play
 		free(channel_data_pre_write_buffer);
 		return notelib_answer_failure_insufficient_command_queue_entries;
 	}
+	//TODO: expand notelib_deinit (or all track stopping I guess? Because we would never know which tracks were active once...) by cleanup routine of enqueued-but-never-dequeued commands - for note commands, call the instrument cleanup routines!
 
 	free(channel_data_pre_write_buffer);
 	return notelib_answer_success;
@@ -325,6 +326,26 @@ enum notelib_status notelib_enqueue_trigger
 	trigger_command.data.trigger.userdata = userdata;
 	trigger_command.position = position;
 	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &trigger_command))
+		return notelib_answer_failure_insufficient_command_queue_entries;
+
+	return notelib_answer_success;
+}
+enum notelib_status notelib_alter
+(notelib_state_handle notelib_state,
+ notelib_alter_function alter, void* userdata,
+ notelib_instrument_uint note_id,
+ notelib_track_uint track_index, notelib_position position){
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+	if(notelib_track_is_disabled(track_ptr))
+		return notelib_answer_failure_invalid_track;
+
+	struct notelib_command alter_command;
+	alter_command.data.type = notelib_command_type_alter;
+	alter_command.data.alter.note_id = note_id;
+	alter_command.data.alter.alter_function = alter;
+	alter_command.data.alter.userdata = userdata;
+	alter_command.position = position;
+	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &alter_command))
 		return notelib_answer_failure_insufficient_command_queue_entries;
 
 	return notelib_answer_success;
