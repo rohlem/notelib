@@ -102,10 +102,10 @@ struct notelib_track* notelib_internals_get_regular_tracks(struct notelib_intern
 }
 
 bool notelib_track_is_initialized_channel_buffer_internal(const struct notelib_internals* internals, const struct notelib_track* track_ptr)
-	{return track_ptr->initialized_channel_buffer_size <= internals->reserved_inline_initialized_channel_buffer_size;}
+	{return track_ptr->data.initialized_channel_buffer_size <= internals->reserved_inline_initialized_channel_buffer_size;}
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 bool notelib_track_immediate_is_initialized_channel_buffer_internal(const struct notelib_internals* internals, const struct notelib_track_immediate* track_ptr)
-	{return track_ptr->initialized_channel_buffer_size <= internals->reserved_inline_initialized_channel_buffer_size;}
+	{return track_ptr->data.initialized_channel_buffer_size <= internals->reserved_inline_immediate_initialized_channel_buffer_size;}
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 
 size_t notelib_internals_sizeof_track_command_queue(uint16_t queued_command_count)
@@ -363,9 +363,81 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 
 	notelib_sample_uint samples_generated = 0;
 	do{//samples_requested cannot be 0
+	#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 		//EXECUTE COMMANDS TRACK IMMEDIATE
-		//struct circular_buffer* command_queue_ptr = notelib_track_get_command_queue(track_ptr);
-		//const struct notelib_command* command_ptr;
+		struct notelib_track_immediate* immediate_track_ptr = notelib_internals_get_track_immediate(internals);
+		struct circular_buffer* immediate_command_queue_ptr = notelib_track_get_command_queue(immediate_track_ptr);
+		const struct notelib_command_immediate* immediate_command_ptr;
+		do{
+			immediate_command_ptr = circular_buffer_direct_read_commence(immediate_command_queue_ptr);
+		if(immediate_command_ptr == NULL) break;
+			const struct notelib_command_data* command_data_ptr = &(immediate_command_ptr->data);
+			switch(command_data_ptr->type){
+			case notelib_command_type_note:;
+				const struct notelib_command_note* note_command = &(command_data_ptr->note);
+				notelib_instrument_uint instrument_index = note_command->instrument_index;
+				struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
+				if(instrument->step_count > 0){
+					struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_state_buffer =
+						notelib_track_immediate_get_initialized_channel_buffer_ptr(internals, immediate_track_ptr);
+					notelib_instrument_state_uint channel_data_size = instrument->channel_data_size;
+					size_t channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(channel_data_size);
+					struct notelib_channel* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
+					notelib_channel_uint* specific_still_active_channel_count = still_active_channel_count + instrument_index;
+					notelib_channel_uint last_channel_index = *specific_still_active_channel_count;
+					++*specific_still_active_channel_count;
+					struct notelib_channel* channel_state_ptr =
+						NOTELIB_INTERNAL_OFFSET_AND_CAST
+						(instrument_state_data,
+						 last_channel_index*channel_state_size,
+						 struct notelib_channel*);
+					channel_state_ptr->current_note_id = note_command->note_id;
+					circular_buffer_liberal_reader_unsynchronized_read
+					(initialized_channel_state_buffer,
+					 channel_data_size,
+					 channel_state_ptr->data);
+				}else
+					fputs("WARNING (notelib): Received (immediate) note command referencing disabled instrument! (Ignoring...)\n", stderr);
+				break;
+			case notelib_command_type_reset:
+				fputs("WARNING (notelib): Received (position) reset command on immediate track! (Ignoring...)\n", stderr);
+				break;
+			case notelib_command_type_set_tempo:;
+				fputs("WARNING (notelib): Received set_tempo command on immediate track! (Ignoring...)\n", stderr);
+				break;
+			case notelib_command_type_trigger:;
+				const struct notelib_command_trigger* command_trigger = &command_data_ptr->trigger;
+				command_trigger->trigger_function(command_trigger->userdata);
+				break;
+			case notelib_command_type_alter:;
+				const struct notelib_command_alter* command_alter = &command_data_ptr->alter;
+				for(notelib_instrument_uint i = 0; i < instrument_count; ++i){
+					struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, i);
+					notelib_step_uint step_count = instrument->step_count;
+					if(step_count > 0){
+						notelib_channel_uint active_channel_count = still_active_channel_count[instrument_index];
+						struct notelib_channel* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
+						size_t channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(instrument->channel_data_size);
+						for(notelib_channel_uint j = 0; j < instrument->active_channel_count; ++j){
+							struct notelib_channel* channel_state_ptr =
+								NOTELIB_INTERNAL_OFFSET_AND_CAST
+								(instrument_state_data,
+								 j*channel_state_size,
+								 struct notelib_channel*);
+							if(channel_state_ptr->current_note_id == command_alter->note_id){
+								command_alter->alter_function(channel_state_ptr, command_alter->userdata);
+				goto immediate_alter_finished;
+							}
+						}
+					}
+				}
+				//did not find the referenced note... is this even an error?
+				immediate_alter_finished:
+					break;
+			}
+			circular_buffer_direct_read_commit(immediate_command_queue_ptr);
+		}while(true);
+	#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 
 		//CHECK HOW MANY SAMPLES TO GENERATE BEFORE COMMANDS
 		notelib_sample_uint samples_until_next_position = samples_requested - samples_generated;

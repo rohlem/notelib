@@ -25,28 +25,43 @@
 	 struct circular_buffer_liberal_reader_unsynchronized,\
 	 struct circular_buffer_liberal_reader_unsynchronized*)
 
+struct notelib_track_data{
+	//NOT ALIGNED because the alignment requirement is only necessary at the top-level entity (here struct notelib_track and struct notelib_track_immediate); any intermediate alignment requirement might/would introduce padding.)
+	uint32_t initialized_channel_buffer_size;
+	//struct circular_buffer command_queue; //cannot declare struct with flexible array member as member of another struct (not even if it's the last member) according to language spec
+	//union of struct circular_buffer_liberal_reader_unsynchronized inline_initialized_channel_buffer and circular_buffer_liberal_reader_unsynchronized* external_initialized_channel_buffer ; size in no way enforced
+};
+
 struct notelib_track{
 	NOTELIB_TRACK_ALIGNMENT
 	notelib_position tempo_ceil_interval;
 	notelib_position position;
 	notelib_sample_uint tempo_ceil_interval_samples;
 	notelib_sample_uint position_sample_offset;
-	uint32_t initialized_channel_buffer_size;
-	//struct circular_buffer command_queue; //cannot declare struct with flexible array member as member of another struct (not even if it's the last member) according to language spec
-	//union of struct circular_buffer_liberal_reader_unsynchronized inline_initialized_channel_buffer and circular_buffer_liberal_reader_unsynchronized* external_initialized_channel_buffer ; size in no way enforced
+	struct notelib_track_data data;
 };
 
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 struct notelib_track_immediate{ //has/requires less state than regular tracks
 	NOTELIB_TRACK_ALIGNMENT
-	uint32_t initialized_channel_buffer_size;
-	//struct circular_buffer command_queue; //cannot declare struct with flexible array member as member of another struct (not even if it's the last member) according to language spec
-	//union of struct circular_buffer_liberal_reader_unsynchronized inline_initialized_channel_buffer and circular_buffer_liberal_reader_unsynchronized* external_initialized_channel_buffer ; size in no way enforced
+	struct notelib_track_data data;
 };
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 
 bool notelib_track_is_disabled (const struct notelib_track* track);
 void notelib_track_disable(struct notelib_track* track);
+enum notelib_status notelib_track_regular_data_setup
+(struct notelib_internals* internals, struct notelib_track* track_ptr, uint32_t initialized_channel_buffer_size);
+enum notelib_status notelib_track_immediate_data_setup
+(struct notelib_internals* internals, struct notelib_track_immediate* track_ptr, uint32_t initialized_channel_buffer_size);
+//expects initialized_channel_buffer_size to already be initialized
+enum notelib_status notelib_track_data_setup
+(struct notelib_track_data* track_data,
+ bool is_initialized_channel_buffer_inline,
+ struct circular_buffer_liberal_reader_unsynchronized* inline_initialized_channel_buffer,
+ struct circular_buffer_liberal_reader_unsynchronized** external_initialized_channel_buffer_ptr_ptr,
+ size_t command_queue_size, struct circular_buffer* command_queue);
+void notelib_track_base_cleanup(struct notelib_track* track);
 
 notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track* track, notelib_position first_position, notelib_position last_position);
 

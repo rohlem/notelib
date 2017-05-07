@@ -120,61 +120,28 @@ enum notelib_status notelib_start_track
 	if(tempo_interval_samples == 0)
 		return notelib_answer_failure_invalid_track_parameters_stopped;
 	struct notelib_internals* internals = (struct notelib_internals*)notelib_state;
-	notelib_track_uint track_count = internals->track_count;
+	notelib_track_uint regular_track_count = internals->track_count;
 	struct notelib_track* track_ptr;
 	notelib_track_uint track_index;
-	for(track_index = 0; track_index < track_count; ++track_index){
+	for(track_index = 0; track_index < regular_track_count; ++track_index){
 		track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
 		if(notelib_track_is_disabled(track_ptr))
 			goto track_found;
 	}
 	return notelib_answer_failure_no_track_available;
 track_found:;
-	track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
-	bool initialized_channel_buffer_inline = notelib_track_is_initialized_channel_buffer_internal(internals, track_ptr);
-	void* ptr_to_free_at_failure;
-	size_t circular_initialized_channel_buffer_size = notelib_internals_sizeof_track_initialized_channel_buffer(initialized_channel_buffer_size);
-	void* initialized_channel_buffer_position;
-	size_t command_queue_size = internals->command_queue_size;
-	if(!initialized_channel_buffer_inline){
-		initialized_channel_buffer_position = malloc(circular_initialized_channel_buffer_size);
-		if(initialized_channel_buffer_position == NULL){
-			notelib_track_disable(track_ptr);
-			return notelib_answer_failure_bad_alloc;
-		}
-		ptr_to_free_at_failure = initialized_channel_buffer_position;
+	enum notelib_status base_setup_status = notelib_track_regular_data_setup(internals, track_ptr, initialized_channel_buffer_size);
+	if(base_setup_status != notelib_answer_success){
+		track_ptr->position_sample_offset = 0;
+		track_ptr->position = 0;
+		track_ptr->tempo_ceil_interval = tempo_interval;
+		track_ptr->tempo_ceil_interval_samples = tempo_interval_samples;
+		*track_index_dest = track_index;
+		return notelib_answer_success;
 	}else{
-		ptr_to_free_at_failure = NULL;
-		initialized_channel_buffer_position = notelib_track_get_inline_initialized_channel_buffer(track_ptr, command_queue_size);
+		//notelib_track_disable(track_ptr); - no-op, because track was disabled before and track_ptr->tempo_ceil_interval_samples is only ever assigned in the other branch
+		return base_setup_status;
 	}
-	size_t sizeof_command_queue = notelib_internals_sizeof_track_command_queue(command_queue_size);
-	struct circular_buffer* command_queue =
-		circular_buffer_construct
-		(notelib_track_get_command_queue(track_ptr),
-		 sizeof_command_queue,
-		 sizeof(struct notelib_command));
-	if(command_queue == NULL){
-		free(ptr_to_free_at_failure);
-		return notelib_status_not_ok;
-	}
-	struct circular_buffer_liberal_reader_unsynchronized* constructed_initiailized_channel_buffer =
-		circular_buffer_liberal_reader_unsynchronized_construct
-		(initialized_channel_buffer_position,
-		 circular_initialized_channel_buffer_size,
-		 initialized_channel_buffer_size);
-	if(constructed_initiailized_channel_buffer == NULL){
-		free(ptr_to_free_at_failure);
-		return notelib_status_not_ok;
-	}
-	track_ptr->position_sample_offset = 0;
-	track_ptr->position = 0;
-	track_ptr->tempo_ceil_interval = tempo_interval;
-	track_ptr->tempo_ceil_interval_samples = tempo_interval_samples;
-	if(!initialized_channel_buffer_inline)
-		*notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size) = initialized_channel_buffer_position;
-
-	*track_index_dest = track_index;
-	return notelib_answer_success;
 }
 enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
 	struct notelib_command reset_command;
