@@ -211,16 +211,22 @@ enum notelib_status notelib_internals_init(void* position, size_t space_availabl
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	if(sizeof_track_immediate > offsetof_regular_tracks - offsetof_track_immediate)
 		return notelib_answer_failure_unknown;
-	if(params->regular_track_count > 0){
+	if(track_count > 0){ //if NOTELIB_NO_IMMEDIATE_TRACK we already checked for 0 before
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 		const size_t sizeof_track = notelib_internals_sizeof_track(queued_command_count, reserved_inline_initialized_channel_buffer_size);
 		if(sizeof_track > (space_available - offsetof_regular_tracks)/track_count)
 			return notelib_answer_failure_unknown;
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	}
-#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 
 	// "object" initialization
+	enum notelib_status immediate_track_data_setup_status =
+		notelib_track_immediate_data_setup
+		(internals, notelib_internals_get_track_immediate(internals),
+		 params->reserved_inline_immediate_initialized_channel_buffer_size);
+	if(immediate_track_data_setup_status != notelib_answer_success)
+		return immediate_track_data_setup_status;
+#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	for(notelib_instrument_uint instrument_index = 0; instrument_index < instrument_count; ++instrument_index)
 		notelib_internals_get_instrument(internals, instrument_index)->step_count = 0;
 	for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index)
@@ -232,9 +238,9 @@ enum notelib_status notelib_internals_init(void* position, size_t space_availabl
 enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
 	struct notelib_internals* internals = (struct notelib_internals*)state_handle;
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
-	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(internals);
-	if(!notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_ptr))
-		free(notelib_track_immediate_get_external_initialized_channel_buffer_ptr(track_ptr, internals->immediate_command_queue_size));
+	struct notelib_track_immediate* track_immediate_ptr = notelib_internals_get_track_immediate(internals);
+	if(!notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_immediate_ptr))
+		free(notelib_track_immediate_get_external_initialized_channel_buffer_ptr(track_immediate_ptr, internals->immediate_command_queue_size));
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	notelib_track_uint track_count = internals->track_count;
 	for(notelib_track_uint track_index = 0; track_index < track_count; ++track_index){

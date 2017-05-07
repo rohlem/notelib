@@ -121,6 +121,7 @@ enum notelib_status notelib_set_track_initialized_channel_buffer_size
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index,
  uint32_t initialized_channel_buffer_size);
+//TODO: notelib_set_immediate_track_initialized_channel_buffer_size
 enum notelib_status notelib_stop_track
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index);

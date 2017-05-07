@@ -130,8 +130,8 @@ enum notelib_status notelib_start_track
 	}
 	return notelib_answer_failure_no_track_available;
 track_found:;
-	enum notelib_status base_setup_status = notelib_track_regular_data_setup(internals, track_ptr, initialized_channel_buffer_size);
-	if(base_setup_status != notelib_answer_success){
+	enum notelib_status data_setup_status = notelib_track_regular_data_setup(internals, track_ptr, initialized_channel_buffer_size);
+	if(data_setup_status != notelib_answer_success){
 		track_ptr->position_sample_offset = 0;
 		track_ptr->position = 0;
 		track_ptr->tempo_ceil_interval = tempo_interval;
@@ -140,7 +140,7 @@ track_found:;
 		return notelib_answer_success;
 	}else{
 		//notelib_track_disable(track_ptr); - no-op, because track was disabled before and track_ptr->tempo_ceil_interval_samples is only ever assigned in the other branch
-		return base_setup_status;
+		return data_setup_status;
 	}
 }
 enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
@@ -181,20 +181,21 @@ enum notelib_status notelib_set_track_initialized_channel_buffer_size
 		ptr_to_free = NULL;
 	else
 		ptr_to_free = notelib_track_get_external_initialized_channel_buffer_ptr(track_ptr, command_queue_size);
-	uint32_t initialized_channel_buffer_size_before = track_ptr->initialized_channel_buffer_size;
-	track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
+	struct notelib_track_data* track_data_ptr = &track_ptr->data;
+	uint32_t initialized_channel_buffer_size_before = track_data_ptr->initialized_channel_buffer_size;
+	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
 	if(notelib_track_is_initialized_channel_buffer_internal(notelib_state, track_ptr)){
 		size_t circular_initialized_channel_buffer_size = notelib_internals_sizeof_track_initialized_channel_buffer(initialized_channel_buffer_size);
 		void* allocated_initialized_channel_buffer = malloc(circular_initialized_channel_buffer_size);
 		if(allocated_initialized_channel_buffer == NULL){
-			track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size_before;
+			track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size_before;
 			return notelib_answer_failure_unknown;
 		}
 		struct circular_buffer_liberal_reader_unsynchronized* constructed_initialized_channel_buffer =
 			circular_buffer_liberal_reader_unsynchronized_construct(allocated_initialized_channel_buffer, circular_initialized_channel_buffer_size, initialized_channel_buffer_size);
 		if(constructed_initialized_channel_buffer == NULL){
 			free(allocated_initialized_channel_buffer);
-			track_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size_before;
+			track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size_before;
 			return notelib_status_not_ok;
 		}
 		*notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size) = constructed_initialized_channel_buffer;
