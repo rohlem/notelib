@@ -146,7 +146,7 @@ track_found:;
 }
 enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
 	struct notelib_command reset_command;
-	reset_command.data.type = notelib_command_type_reset;
+	reset_command.type = notelib_command_type_reset;
 	reset_command.position = position;
 	if(circular_buffer_write(notelib_track_get_command_queue(notelib_internals_get_regular_track(notelib_state, track_index)), &reset_command))
 		return notelib_answer_success;
@@ -162,7 +162,7 @@ enum notelib_status notelib_set_track_tempo
 	if(tempo_interval_samples == 0)
 		return notelib_answer_failure_unknown;
 	struct notelib_command set_tempo_command;
-	set_tempo_command.data.type = notelib_command_type_set_tempo;
+	set_tempo_command.type = notelib_command_type_set_tempo;
 	set_tempo_command.data.tempo.position_interval = tempo_interval;
 	set_tempo_command.data.tempo.interval = tempo_interval_samples;
 	set_tempo_command.position = position;
@@ -231,7 +231,7 @@ enum notelib_status notelib_play
 	enum notelib_status command_construction_status =
 		notelib_construct_command_data_note
 		(notelib_state, instrument_index, trigger_data, initialized_channel_buffer,
-		 &play_note_command.data, &channel_data_pre_write_buffer_ptr, note_id_target);
+		 &play_note_command.type, &play_note_command.data, &channel_data_pre_write_buffer_ptr, note_id_target);
 	if(command_construction_status == notelib_answer_success){
 		play_note_command.position = position;
 
@@ -267,7 +267,7 @@ enum notelib_status notelib_play_immediate
 	enum notelib_status command_construction_status =
 		notelib_construct_command_data_note
 		(notelib_state, instrument_index, trigger_data, initialized_channel_buffer,
-		 &play_note_command.data, &channel_data_pre_write_buffer_ptr, note_id_target);
+		 &play_note_command.type, &play_note_command.data, &channel_data_pre_write_buffer_ptr, note_id_target);
 	if(command_construction_status == notelib_answer_success){
 
 		if(circular_buffer_write(notelib_track_immediate_get_command_queue(track_ptr), &play_note_command)){
@@ -299,7 +299,7 @@ enum notelib_status notelib_enqueue_trigger
 		return notelib_answer_failure_invalid_track;
 
 	struct notelib_command trigger_command;
-	trigger_command.data.type = notelib_command_type_trigger;
+	trigger_command.type = notelib_command_type_trigger;
 	trigger_command.data.trigger.trigger_function = trigger;
 	trigger_command.data.trigger.userdata = userdata;
 	trigger_command.position = position;
@@ -314,7 +314,7 @@ enum notelib_status notelib_immediate_trigger
 	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
 
 	struct notelib_command_immediate trigger_command;
-	trigger_command.data.type = notelib_command_type_trigger;
+	trigger_command.type = notelib_command_type_trigger;
 	trigger_command.data.trigger.trigger_function = trigger;
 	trigger_command.data.trigger.userdata = userdata;
 
@@ -334,7 +334,7 @@ enum notelib_status notelib_alter
 		return notelib_answer_failure_invalid_track;
 
 	struct notelib_command alter_command;
-	alter_command.data.type = notelib_command_type_alter;
+	alter_command.type = notelib_command_type_alter;
 	alter_command.data.alter.note_id = note_id;
 	alter_command.data.alter.alter_function = alter;
 	alter_command.data.alter.userdata = userdata;
@@ -352,7 +352,7 @@ enum notelib_status notelib_alter_immediate
 	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
 
 	struct notelib_command_immediate alter_command;
-	alter_command.data.type = notelib_command_type_alter;
+	alter_command.type = notelib_command_type_alter;
 	alter_command.data.alter.note_id = note_id;
 	alter_command.data.alter.alter_function = alter;
 	alter_command.data.alter.userdata = userdata;

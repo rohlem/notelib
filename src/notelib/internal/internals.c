@@ -377,8 +377,8 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 		do{
 			immediate_command_ptr = circular_buffer_direct_read_commence(immediate_command_queue_ptr);
 		if(immediate_command_ptr == NULL) break;
-			const struct notelib_command_data* command_data_ptr = &(immediate_command_ptr->data);
-			switch(command_data_ptr->type){
+			const union notelib_command_data* command_data_ptr = &(immediate_command_ptr->data);
+			switch(immediate_command_ptr->type){
 			case notelib_command_type_note:;
 				const struct notelib_command_note* note_command = &(command_data_ptr->note);
 				notelib_instrument_uint instrument_index = note_command->instrument_index;
@@ -499,8 +499,8 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 			if(command_ptr == NULL) break;
 				notelib_position command_position = command_ptr->position;
 			if(command_position > new_position) break;
-				const struct notelib_command_data* command_data_ptr = &(command_ptr->data);
-				switch(command_data_ptr->type){
+				const union notelib_command_data* command_data_ptr = &(command_ptr->data);
+				switch(command_ptr->type){
 				case notelib_command_type_note:;
 					const struct notelib_command_note* note_command = &(command_data_ptr->note);
 					notelib_instrument_uint instrument_index = note_command->instrument_index;

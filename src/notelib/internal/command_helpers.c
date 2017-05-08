@@ -10,7 +10,7 @@
 enum notelib_status notelib_construct_command_data_note
 (struct notelib_internals* internals,
  notelib_instrument_uint instrument_index, void* trigger_data, struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_buffer,
- struct notelib_command_data* command_data_target, void** channel_data_pre_write_buffer_target, notelib_note_id_uint* note_id_target){
+ enum notelib_command_type* command_type_target, union notelib_command_data* command_data_target, void** channel_data_pre_write_buffer_target, notelib_note_id_uint* note_id_target){
 	struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(internals, instrument_index);
 	notelib_step_uint step_count = instrument_ptr->step_count;
 	if(step_count == 0)
@@ -44,7 +44,7 @@ enum notelib_status notelib_construct_command_data_note
 
 	*channel_data_pre_write_buffer_target = channel_data_pre_write_buffer;
 
-	command_data_target->type = notelib_command_type_note;
+	*command_type_target = notelib_command_type_note;
 	command_data_target->note.instrument_index = instrument_index;
 	notelib_note_id_uint note_id = notelib_internals_get_next_note_id(internals);
 	//could split up get and increment of note_id and only increment if command_queue write was successful
