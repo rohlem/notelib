@@ -17,7 +17,7 @@
 
 #include "../util/eclipse_codan_fix.hpp"
 
-notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_internals* internals){
+notelib_note_id_uint notelib_internals_get_next_note_id(struct notelib_internals* internals){
 	notelib_note_id_uint* next_note_id_ptr = &(internals->next_note_id);
 	notelib_note_id_uint note_id = *next_note_id_ptr;
 	++(*next_note_id_ptr);
@@ -372,7 +372,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 	#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 		//EXECUTE COMMANDS TRACK IMMEDIATE
 		struct notelib_track_immediate* immediate_track_ptr = notelib_internals_get_track_immediate(internals);
-		struct circular_buffer* immediate_command_queue_ptr = notelib_track_get_command_queue(immediate_track_ptr);
+		struct circular_buffer* immediate_command_queue_ptr = notelib_track_immediate_get_command_queue(immediate_track_ptr);
 		const struct notelib_command_immediate* immediate_command_ptr;
 		do{
 			immediate_command_ptr = circular_buffer_direct_read_commence(immediate_command_queue_ptr);
@@ -424,7 +424,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 						notelib_channel_uint active_channel_count = still_active_channel_count[instrument_index];
 						struct notelib_channel* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
 						size_t channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(instrument->channel_data_size);
-						for(notelib_channel_uint j = 0; j < instrument->active_channel_count; ++j){
+						for(notelib_channel_uint j = 0; j < active_channel_count; ++j){
 							struct notelib_channel* channel_state_ptr =
 								NOTELIB_INTERNAL_OFFSET_AND_CAST
 								(instrument_state_data,
@@ -554,7 +554,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 							notelib_channel_uint active_channel_count = still_active_channel_count[instrument_index];
 							struct notelib_channel* instrument_state_data = notelib_instrument_get_state_data(internals, instrument);
 							size_t channel_state_size = NOTELIB_CHANNEL_SIZEOF_SINGLE(instrument->channel_data_size);
-							for(notelib_channel_uint j = 0; j < instrument->active_channel_count; ++j){
+							for(notelib_channel_uint j = 0; j < active_channel_count; ++j){
 								struct notelib_channel* channel_state_ptr =
 									NOTELIB_INTERNAL_OFFSET_AND_CAST
 									(instrument_state_data,

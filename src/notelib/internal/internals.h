@@ -29,7 +29,7 @@ struct notelib_internals{
 
 static const size_t notelib_internals_offsetof_instruments = NOTELIB_INTERNAL_PAD_SIZEOF(struct notelib_internals, struct notelib_instrument);
 
-notelib_note_id_uint notelib_instrument_get_next_note_id(struct notelib_internals*);
+notelib_note_id_uint notelib_internals_get_next_note_id(struct notelib_internals*);
 
 size_t notelib_internals_offsetof_dual_audio_buffer(notelib_instrument_uint instrument_count, uint16_t instrument_size);
 

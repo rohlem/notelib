@@ -59,12 +59,14 @@ struct notelib_params{
 	uint16_t reserved_inline_initialized_channel_buffer_size;
 };
 
+
 /*
 enum notelib_status notelib_init
 (notelib_state_handle* state_handle_dest,
  const struct notelib_params* params, void* backend_params);
 enum notelib_status notelib_deinit(notelib_state_handle state_handle);
 */
+
 
 typedef notelib_sample_uint (*notelib_processing_step_function)
         (notelib_sample* in, notelib_sample* out,
@@ -90,6 +92,7 @@ typedef struct notelib_instrument* notelib_instrument_handle;
 typedef void (*notelib_trigger_function)(void* userdata);
 typedef void (*notelib_alter_function)(void* channel_state, void* userdata);
 
+
 enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint* instrument_index_dest,
@@ -103,6 +106,8 @@ enum notelib_status notelib_set_instrument_channel_count
 enum notelib_status notelib_unregister_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index);
+/*notelib_step_uint notelib_instrument_get_step_count
+(notelib_state_handle notelib_state, notelib_instrument_handle handle);*/
 
 enum notelib_status notelib_start_track
 (notelib_state_handle notelib_state,
@@ -126,24 +131,37 @@ enum notelib_status notelib_stop_track
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index);
 
+
 enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
  notelib_track_uint track_index, notelib_position position,
  notelib_note_id_uint* note_id_target);
+enum notelib_status notelib_play_immediate
+(notelib_state_handle notelib_state,
+ notelib_instrument_uint instrument_index,
+ void* trigger_data,
+ notelib_note_id_uint* note_id_target);
+
 enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position);
+enum notelib_status notelib_immediate_trigger
+(notelib_state_handle notelib_state,
+ notelib_trigger_function trigger, void* userdata);
+
 enum notelib_status notelib_alter
 (notelib_state_handle notelib_state,
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id,
  notelib_track_uint track_index, notelib_position position);
+enum notelib_status notelib_alter_immediate
+(notelib_state_handle notelib_state,
+ notelib_alter_function alter, void* userdata,
+ notelib_instrument_uint note_id);
 
-/*notelib_step_uint notelib_instrument_get_step_count
-(notelib_state_handle notelib_state, notelib_instrument_handle handle);*/
 
 #include "internal/channel.h"
 

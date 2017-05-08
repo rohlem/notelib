@@ -91,8 +91,8 @@ void test_notelib_internals_sizes(const struct notelib_params* params){
 	size_t instrument_count = params->instrument_count;
 	printf(" sizeof  (struct notelib_instrument):            %d * %d = %d\n", (int)sizeof_instrument, (int)instrument_count, (int)(sizeof_instrument*instrument_count));
 	printf("  sizeof (struct notelib_processing_step_entry): %d\n", (int)sizeof(struct notelib_processing_step_entry));
-	printf("  sizeof (processing step entries):              %d * %d = %d (min 4)\n", (int)params->inline_step_count, (int)sizeof(struct notelib_processing_step_entry), (int)notelib_instrument_get_inline_steps_size(params->inline_step_count));
-	printf("  sizeof (reserved inline state space):          %d          (min 4)\n", (int)params->reserved_inline_state_space);
+	printf("  sizeof (processing step entries):              %d * %d = %d (min %d)\n", (int)params->inline_step_count, (int)sizeof(struct notelib_processing_step_entry), (int)notelib_instrument_get_inline_steps_size(params->inline_step_count), (int)sizeof(void*));
+	printf("  sizeof (reserved inline state space):          %d          (min %d)\n", (int)params->reserved_inline_state_space, (int)sizeof(void*));
 	printf("offsetof(dual_audio_buffers):                   %d\n", (int)notelib_internals_offsetof_dual_audio_buffer(params->instrument_count, sizeof_instrument));
 	printf(" sizeof (dual_audio_buffers):                   %d * %d * %d = %d\n", (int)(1 + NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER), (int)params->internal_dual_buffer_size, (int)sizeof(notelib_sample), (int)notelib_internals_sizeof_dual_audio_buffer(params->internal_dual_buffer_size));
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK

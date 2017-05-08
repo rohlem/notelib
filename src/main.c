@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#if 0
+#if 1
 
 //#include "test/test_circular_buffer.h"
 //#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"

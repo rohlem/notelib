@@ -27,7 +27,7 @@ struct notelib_command_data{
 			void* userdata;
 		} trigger;
 		struct notelib_command_alter{
-			notelib_note_id_uint note_id; //possible optimization: put note_id into initialized_channel_buffer (in-place), memcpy state_size instead of data_size (desirable?)
+			notelib_note_id_uint note_id;
 			notelib_alter_function alter_function;
 			void* userdata;
 		} alter;

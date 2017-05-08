@@ -5,6 +5,7 @@
 
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 bool notelib_track_is_disabled (const struct notelib_track* track) {return track->tempo_ceil_interval_samples == 0;}
 void notelib_track_disable(struct notelib_track* track) {track->tempo_ceil_interval_samples = 0;}
@@ -18,7 +19,7 @@ enum notelib_status notelib_track_regular_data_setup(struct notelib_internals* i
 		 notelib_track_is_initialized_channel_buffer_internal(internals, track_ptr),
 		 notelib_track_get_inline_initialized_channel_buffer(track_ptr, command_queue_size),
 		 notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size),
-		 command_queue_size, notelib_track_get_command_queue(track_ptr));
+		 sizeof(struct notelib_command), command_queue_size, notelib_track_get_command_queue(track_ptr));
 }
 enum notelib_status notelib_track_immediate_data_setup(struct notelib_internals* internals, struct notelib_track_immediate* track_ptr, uint32_t initialized_channel_buffer_size){
 	uint16_t command_queue_size = internals->command_queue_size;
@@ -30,14 +31,14 @@ enum notelib_status notelib_track_immediate_data_setup(struct notelib_internals*
 		 notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_ptr),
 		 notelib_track_immediate_get_inline_initialized_channel_buffer(track_ptr, command_queue_size),
 		 notelib_track_immediate_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size),
-		 command_queue_size, notelib_track_immediate_get_command_queue(track_ptr));
+		 sizeof(struct notelib_command_immediate), command_queue_size, notelib_track_immediate_get_command_queue(track_ptr));
 }
 enum notelib_status notelib_track_data_setup
 (struct notelib_track_data* track_data,
  bool is_initialized_channel_buffer_inline,
  struct circular_buffer_liberal_reader_unsynchronized* inline_initialized_channel_buffer,
  struct circular_buffer_liberal_reader_unsynchronized** external_initialized_channel_buffer_ptr_ptr,
- size_t command_queue_size, struct circular_buffer* command_queue){
+ size_t command_size, size_t command_queue_size, struct circular_buffer* command_queue){
 	void* ptr_to_free_at_failure;
 	uint32_t initialized_channel_buffer_data_size = track_data->initialized_channel_buffer_size;
 	size_t circular_initialized_channel_buffer_size = notelib_internals_sizeof_track_initialized_channel_buffer(initialized_channel_buffer_data_size);
@@ -56,7 +57,7 @@ enum notelib_status notelib_track_data_setup
 		circular_buffer_construct
 		(command_queue,
 		 sizeof_command_queue,
-		 sizeof(struct notelib_command));
+		 command_size);
 	if(command_queue == NULL){
 		free(ptr_to_free_at_failure);
 		return notelib_status_not_ok;
