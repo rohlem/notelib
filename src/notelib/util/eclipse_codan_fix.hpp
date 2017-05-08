@@ -15,6 +15,6 @@
 #define atomic_load_explicit(...) 0
 #undef atomic_store_explicit
 #define atomic_store_explicit(...) 0
-*/
+//*/
 
 #endif//#ifndef NOTELIB_UTIL_ECLIPSE_CODAN_FIX_HPP_
