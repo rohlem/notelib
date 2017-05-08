@@ -20,7 +20,9 @@
 notelib_note_id_uint notelib_internals_get_next_note_id(struct notelib_internals* internals){
 	notelib_note_id_uint* next_note_id_ptr = &(internals->next_note_id);
 	notelib_note_id_uint note_id = *next_note_id_ptr;
-	++(*next_note_id_ptr);
+	if(note_id == notelib_internals_non_unique_note_id)
+		note_id = 0;
+	*next_note_id_ptr = note_id + 1;
 	return note_id;
 }
 

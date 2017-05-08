@@ -46,13 +46,16 @@ enum notelib_status notelib_construct_command_data_note
 
 	*command_type_target = notelib_command_type_note;
 	command_data_target->note.instrument_index = instrument_index;
-	notelib_note_id_uint note_id = notelib_internals_get_next_note_id(internals);
-	//could split up get and increment of note_id and only increment if command_queue write was successful
-	 //+ help performance in the case of error (which is not a priority)
-	 //- possibly hurt data access locality? (Can fetch for increment-post-fetch be expected to be optimized out? (and would it even make a difference not to have a read-dependency?) (update: much less likely across function boundaries the way the code turned out))
-	command_data_target->note.note_id = note_id;
-	if(note_id_target != NULL)
+	notelib_note_id_uint note_id;
+	if(note_id_target != NULL){
+		note_id = notelib_internals_get_next_note_id(internals);
+		//could split up get and increment of note_id and only increment if command_queue write was successful
+		 //+ help performance in the case of error (which is not a priority)
+		 //- possibly hurt data access locality? (Can fetch for increment-post-fetch be expected to be optimized out? (and would it even make a difference not to have a read-dependency?) (update: much less likely across function boundaries the way the code turned out))
 		*note_id_target = note_id;
+	}else
+		note_id = notelib_internals_non_unique_note_id;
+	command_data_target->note.note_id = note_id;
 
 	return notelib_answer_success;
 }

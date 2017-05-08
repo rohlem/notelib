@@ -27,6 +27,8 @@ struct notelib_internals{
 	//circular_buffer notelib_command_queue
 };
 
+enum {notelib_internals_non_unique_note_id = NOTELIB_NOTE_ID_UINT_MAX};
+
 static const size_t notelib_internals_offsetof_instruments = NOTELIB_INTERNAL_PAD_SIZEOF(struct notelib_internals, struct notelib_instrument);
 
 notelib_note_id_uint notelib_internals_get_next_note_id(struct notelib_internals*);
