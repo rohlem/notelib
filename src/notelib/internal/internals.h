@@ -71,6 +71,7 @@ bool notelib_track_immediate_is_initialized_channel_buffer_internal(const struct
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 
 size_t notelib_internals_sizeof_track_command_queue(uint16_t queued_command_count);
+size_t notelib_internals_sizeof_track_immediate_command_queue(uint16_t queued_command_count);
 
 size_t notelib_internals_sizeof_track_initialized_channel_buffer(uint16_t initialized_channel_buffer_size);
 

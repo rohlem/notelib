@@ -112,6 +112,8 @@ bool notelib_track_immediate_is_initialized_channel_buffer_internal(const struct
 
 size_t notelib_internals_sizeof_track_command_queue(uint16_t queued_command_count)
 	{return circular_buffer_sizeof(sizeof(struct notelib_command), queued_command_count);}
+size_t notelib_internals_sizeof_track_immediate_command_queue(uint16_t queued_command_count)
+	{return circular_buffer_sizeof(sizeof(struct notelib_command_immediate), queued_command_count);}
 
 size_t notelib_internals_sizeof_track_initialized_channel_buffer(uint16_t initialized_channel_buffer_size)
 	{return circular_buffer_liberal_reader_unsynchronized_sizeof(initialized_channel_buffer_size);}
@@ -129,7 +131,7 @@ size_t notelib_internals_sizeof_track_immediate(uint16_t queued_immediate_comman
 	{return
 		 NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
 		 (NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF
-		  (notelib_track_immediate_offsetof_command_queue + notelib_internals_sizeof_track_command_queue(queued_immediate_command_count),
+		  (notelib_track_immediate_offsetof_command_queue + notelib_internals_sizeof_track_immediate_command_queue(queued_immediate_command_count),
 		   struct circular_buffer_liberal_reader_unsynchronized)
 		  + notelib_internals_sizeof_track_initialized_channel_buffer(reserved_inline_immediate_initialized_channel_buffer_size),
 		  struct notelib_track);}
@@ -188,7 +190,7 @@ enum notelib_status notelib_internals_init(void* position, size_t space_availabl
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	const uint16_t queued_immediate_command_count = params->queued_immediate_command_count+1; //adding 1 because of the design flaw that one buffer element is always introduced
 	internals->immediate_command_queue_size = queued_immediate_command_count;
-	uint16_t reserved_inline_immediate_initialized_channel_buffer_size = params->reserved_inline_initialized_channel_buffer_size;
+	uint16_t reserved_inline_immediate_initialized_channel_buffer_size = params->reserved_inline_immediate_initialized_channel_buffer_size;
 	reserved_inline_immediate_initialized_channel_buffer_size += reserved_inline_immediate_initialized_channel_buffer_size > 0; //adding 1 because of the design flaw that one buffer element is always introduced
 	internals->reserved_inline_immediate_initialized_channel_buffer_size = reserved_inline_immediate_initialized_channel_buffer_size;
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK

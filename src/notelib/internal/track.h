@@ -60,7 +60,7 @@ enum notelib_status notelib_track_data_setup
  bool is_initialized_channel_buffer_inline,
  struct circular_buffer_liberal_reader_unsynchronized* inline_initialized_channel_buffer,
  struct circular_buffer_liberal_reader_unsynchronized** external_initialized_channel_buffer_ptr_ptr,
- size_t command_size, size_t command_queue_size, struct circular_buffer* command_queue);
+ size_t command_size, size_t sizeof_command_queue, struct circular_buffer* command_queue);
 void notelib_track_base_cleanup(struct notelib_track* track);
 
 notelib_sample_uint notelib_track_get_tempo_interval(const struct notelib_track* track, notelib_position first_position, notelib_position last_position);

@@ -19,10 +19,10 @@ enum notelib_status notelib_track_regular_data_setup(struct notelib_internals* i
 		 notelib_track_is_initialized_channel_buffer_internal(internals, track_ptr),
 		 notelib_track_get_inline_initialized_channel_buffer(track_ptr, command_queue_size),
 		 notelib_track_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size),
-		 sizeof(struct notelib_command), command_queue_size, notelib_track_get_command_queue(track_ptr));
+		 sizeof(struct notelib_command), notelib_internals_sizeof_track_command_queue(command_queue_size), notelib_track_get_command_queue(track_ptr));
 }
 enum notelib_status notelib_track_immediate_data_setup(struct notelib_internals* internals, struct notelib_track_immediate* track_ptr, uint32_t initialized_channel_buffer_size){
-	uint16_t command_queue_size = internals->command_queue_size;
+	uint16_t command_queue_size = internals->immediate_command_queue_size;
 	struct notelib_track_data* track_data_ptr = &track_ptr->data;
 	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
 	return
@@ -31,14 +31,14 @@ enum notelib_status notelib_track_immediate_data_setup(struct notelib_internals*
 		 notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_ptr),
 		 notelib_track_immediate_get_inline_initialized_channel_buffer(track_ptr, command_queue_size),
 		 notelib_track_immediate_get_external_initialized_channel_buffer_ptr_ptr(track_ptr, command_queue_size),
-		 sizeof(struct notelib_command_immediate), command_queue_size, notelib_track_immediate_get_command_queue(track_ptr));
+		 sizeof(struct notelib_command_immediate), notelib_internals_sizeof_track_immediate_command_queue(command_queue_size), notelib_track_immediate_get_command_queue(track_ptr));
 }
 enum notelib_status notelib_track_data_setup
 (struct notelib_track_data* track_data,
  bool is_initialized_channel_buffer_inline,
  struct circular_buffer_liberal_reader_unsynchronized* inline_initialized_channel_buffer,
  struct circular_buffer_liberal_reader_unsynchronized** external_initialized_channel_buffer_ptr_ptr,
- size_t command_size, size_t command_queue_size, struct circular_buffer* command_queue){
+ size_t command_size, size_t sizeof_command_queue, struct circular_buffer* command_queue){
 	void* ptr_to_free_at_failure;
 	uint32_t initialized_channel_buffer_data_size = track_data->initialized_channel_buffer_size;
 	size_t circular_initialized_channel_buffer_size = notelib_internals_sizeof_track_initialized_channel_buffer(initialized_channel_buffer_data_size);
@@ -52,7 +52,6 @@ enum notelib_status notelib_track_data_setup
 		ptr_to_free_at_failure = NULL;
 		initialized_channel_buffer_position = inline_initialized_channel_buffer;
 	}
-	size_t sizeof_command_queue = notelib_internals_sizeof_track_command_queue(command_queue_size);
 	command_queue =
 		circular_buffer_construct
 		(command_queue,
@@ -133,7 +132,7 @@ struct circular_buffer_liberal_reader_unsynchronized*  notelib_track_immediate_g
 		 (track_ptr,
 		  NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF(
 		   notelib_track_immediate_offsetof_command_queue
-		   + notelib_internals_sizeof_track_command_queue(queued_command_count),
+		   + notelib_internals_sizeof_track_immediate_command_queue(queued_command_count),
 		  struct circular_buffer_liberal_reader_unsynchronized),
 		  struct circular_buffer_liberal_reader_unsynchronized*);}
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
@@ -156,7 +155,7 @@ struct circular_buffer_liberal_reader_unsynchronized** notelib_track_immediate_g
 		 (track_ptr,
 		  NOTELIB_INTERNAL_ALIGN_TO_NEXT_ALIGNOF(
 		   notelib_track_immediate_offsetof_command_queue
-		   + notelib_internals_sizeof_track_command_queue(queued_command_count),
+		   + notelib_internals_sizeof_track_immediate_command_queue(queued_command_count),
 		  struct circular_buffer_liberal_reader_unsynchronized*),
 		  struct circular_buffer_liberal_reader_unsynchronized**);}
 struct circular_buffer_liberal_reader_unsynchronized*  notelib_track_immediate_get_external_initialized_channel_buffer_ptr    (struct notelib_track_immediate* track_ptr, uint16_t queued_command_count)

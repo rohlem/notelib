@@ -75,7 +75,7 @@ struct notelib_params standard_params = {
 	.reserved_inline_state_space = 8*NOTELIB_CHANNEL_SIZEOF_SINGLE(16),
 	.internal_dual_buffer_size = 256,
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
-	.queued_immediate_command_count = 4,
+	.queued_immediate_command_count = 16,
 	.reserved_inline_immediate_initialized_channel_buffer_size = 4*NOTELIB_CHANNEL_SIZEOF_SINGLE(16),
 	.initial_immediate_initialized_channel_buffer_size = 0,
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
@@ -101,7 +101,7 @@ void test_notelib_internals_sizes(const struct notelib_params* params){
 	const size_t inline_immediate_initialized_channel_buffer_size = params->reserved_inline_immediate_initialized_channel_buffer_size+(params->reserved_inline_immediate_initialized_channel_buffer_size>0);
 	printf(" sizeof  (struct notelib_track_immediate):       %d\n", (int)notelib_internals_sizeof_track_immediate(queued_immediate_command_count, inline_immediate_initialized_channel_buffer_size));
 	printf("  sizeof (members):                              %d\n", (int)sizeof(struct notelib_track_immediate));
-	printf("  sizeof (immediate_command_queue):              %d\n", (int)notelib_internals_sizeof_track_command_queue(queued_immediate_command_count));
+	printf("  sizeof (immediate_command_queue):              %d\n", (int)notelib_internals_sizeof_track_immediate_command_queue(queued_immediate_command_count));
 	printf("  sizeof (inline_immediate_i._channel_buffer):   %d\n", (int)notelib_internals_sizeof_track_initialized_channel_buffer(inline_immediate_initialized_channel_buffer_size));
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	printf("offsetof(struct notelib_track):                 %d\n",  (int)notelib_internals_offsetof_regular_tracks(params->instrument_count, sizeof_instrument, params->internal_dual_buffer_size
@@ -116,7 +116,7 @@ void test_notelib_internals_sizes(const struct notelib_params* params){
 	printf(" sizeof  (tracks):                                %d * %d = %d\n", (int)rtc, (int)sizeof_track, (int)(rtc*sizeof_track));
 	printf("  sizeof (members):                               %d\n", (int)sizeof(struct notelib_track));
 	printf("  sizeof (command_queue):                         %d\n", (int)notelib_internals_sizeof_track_command_queue(queued_command_count));
-	printf("  sizeof (immediate_initialized_channel_buffer):  %d\n", (int)notelib_internals_sizeof_track_initialized_channel_buffer(inline_initialized_channel_buffer_size));
+	printf("  sizeof (inline_initialized_channel_buffer):  %d\n", (int)notelib_internals_sizeof_track_initialized_channel_buffer(inline_initialized_channel_buffer_size));
 	printf("total size requirement: %d\n\n", (int)notelib_internals_size_requirements(params));
 	fflush(stdout);
 }
