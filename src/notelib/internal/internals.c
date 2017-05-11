@@ -435,7 +435,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 								 j*channel_state_size,
 								 struct notelib_channel*);
 							if(channel_state_ptr->current_note_id == command_alter->note_id){
-								command_alter->alter_function(channel_state_ptr, command_alter->userdata);
+								command_alter->alter_function(channel_state_ptr->data, command_alter->userdata);
 				goto immediate_alter_finished;
 							}
 						}
@@ -565,7 +565,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 									 j*channel_state_size,
 									 struct notelib_channel*);
 								if(channel_state_ptr->current_note_id == command_alter->note_id){
-									command_alter->alter_function(channel_state_ptr, command_alter->userdata);
+									command_alter->alter_function(channel_state_ptr->data, command_alter->userdata);
 					goto alter_finished;
 								}
 							}
