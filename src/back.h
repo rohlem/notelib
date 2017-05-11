@@ -1,12 +1,12 @@
 #ifndef BACK_H_
 #define BACK_H_
 
+#include "notelib/notelib.h"
+#include "portaudio.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif//#ifdef __cplusplus
-
-#include "notelib/notelib.h"
-#include "portaudio.h"
 
 extern notelib_state_handle pa_back_notelib_handle;
 
