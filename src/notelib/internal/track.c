@@ -12,7 +12,7 @@ void notelib_track_disable(struct notelib_track* track) {track->tempo_ceil_inter
 enum notelib_status notelib_track_regular_data_setup(struct notelib_internals* internals, struct notelib_track* track_ptr, uint32_t initialized_channel_buffer_size){
 	uint16_t command_queue_size = internals->command_queue_size;
 	struct notelib_track_data* track_data_ptr = &track_ptr->data;
-	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
+	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size + (initialized_channel_buffer_size > 0);
 	return
 		notelib_track_data_setup
 		(track_data_ptr,
@@ -24,7 +24,7 @@ enum notelib_status notelib_track_regular_data_setup(struct notelib_internals* i
 enum notelib_status notelib_track_immediate_data_setup(struct notelib_internals* internals, struct notelib_track_immediate* track_ptr, uint32_t initialized_channel_buffer_size){
 	uint16_t command_queue_size = internals->immediate_command_queue_size;
 	struct notelib_track_data* track_data_ptr = &track_ptr->data;
-	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size;
+	track_data_ptr->initialized_channel_buffer_size = initialized_channel_buffer_size + (initialized_channel_buffer_size > 0);
 	return
 		notelib_track_data_setup
 		(track_data_ptr,
@@ -171,8 +171,8 @@ struct circular_buffer_liberal_reader_unsynchronized* notelib_track_get_initiali
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 struct circular_buffer_liberal_reader_unsynchronized* notelib_track_immediate_get_initialized_channel_buffer_ptr(const struct notelib_internals* internals, struct notelib_track_immediate* track_ptr){
 	if(notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_ptr))
-		return notelib_track_immediate_get_inline_initialized_channel_buffer      (track_ptr, internals->command_queue_size);
+		return notelib_track_immediate_get_inline_initialized_channel_buffer      (track_ptr, internals->immediate_command_queue_size);
 	else
-		return notelib_track_immediate_get_external_initialized_channel_buffer_ptr(track_ptr, internals->command_queue_size);
+		return notelib_track_immediate_get_external_initialized_channel_buffer_ptr(track_ptr, internals->immediate_command_queue_size);
 }
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
