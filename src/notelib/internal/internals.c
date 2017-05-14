@@ -284,9 +284,9 @@ enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
 }
 
 bool notelib_internals_start_note
-(struct notelib_internals* internals, const union notelib_command_data* command_data_ptr,
- notelib_channel_uint* still_active_channel_count_array,
- struct circular_buffer_liberal_reader_unsynchronized* initialized_channel_state_buffer){
+(struct notelib_internals* const internals, const union notelib_command_data* const command_data_ptr,
+ notelib_channel_uint* const still_active_channel_count_array,
+ struct circular_buffer_liberal_reader_unsynchronized* const initialized_channel_state_buffer){
 	const struct notelib_command_note* note_command = &(command_data_ptr->note);
 	notelib_instrument_uint instrument_index = note_command->instrument_index;
 	struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
@@ -311,10 +311,12 @@ bool notelib_internals_start_note
 	}else
 		return false;
 }
-void notelib_internals_alter_note
-(struct notelib_internals* internals, const union notelib_command_data* command_data_ptr,
- notelib_instrument_uint instrument_count, const notelib_channel_uint* still_active_channel_count_array){
-	const struct notelib_command_alter* command_alter = &command_data_ptr->alter;
+static inline bool notelib_internals_find_note //I really hope this gets inline-optimized... otherwise the output parameters are unnecessarily stored and reloaded
+(struct notelib_internals* const internals, notelib_instrument_uint const instrument_count,
+ const notelib_channel_uint* const still_active_channel_count_array,
+ notelib_note_id_uint const note_id,
+ struct notelib_channel** const channel_state_ptr_target, struct notelib_channel** const last_channel_state_ptr_target,
+ size_t* const instrument_state_size_target, notelib_instrument_uint* const instrument_index_target){
 	for(notelib_instrument_uint instrument_index = 0; instrument_index < instrument_count; ++instrument_index){
 		struct notelib_instrument* instrument = notelib_internals_get_instrument(internals, instrument_index);
 		notelib_step_uint step_count = instrument->step_count;
@@ -328,14 +330,57 @@ void notelib_internals_alter_note
 					(instrument_state_data,
 					 j*channel_state_size,
 					 struct notelib_channel*);
-				if(channel_state_ptr->current_note_id == command_alter->note_id){
-					command_alter->alter_function(channel_state_ptr->data, command_alter->userdata);
-					return;
+				if(channel_state_ptr->current_note_id == note_id){
+					//found note
+					*channel_state_ptr_target = instrument_state_data;
+					*last_channel_state_ptr_target =
+						NOTELIB_INTERNAL_OFFSET_AND_CAST
+						(instrument_state_data,
+						 (active_channel_count-1)*channel_state_size,
+						 struct notelib_channel*);
+					*instrument_state_size_target = channel_state_size;
+					*instrument_index_target = instrument_index;
+					return true;
 				}
 			}
 		}
 	}
-	//did not find the referenced note... is this even an error?
+	//did not find the note in question
+	return false;
+}
+void notelib_internals_alter_note
+(struct notelib_internals* const internals, const union notelib_command_data* const command_data_ptr,
+ notelib_instrument_uint instrument_count, const notelib_channel_uint* const active_channel_count_array){
+	const struct notelib_command_alter* command_alter = &command_data_ptr->alter;
+	struct notelib_channel* channel_state_ptr;
+	struct notelib_channel* last_channel_state_ptr_unused;
+	size_t instrument_state_size_unused;
+	notelib_instrument_uint instrument_index_unused;
+	if(notelib_internals_find_note
+	   (internals, instrument_count, active_channel_count_array, //aux in
+	    command_alter->note_id, &channel_state_ptr, //in, out
+	    &last_channel_state_ptr_unused, &instrument_state_size_unused, &instrument_index_unused)) //out unused
+		//note found
+		command_alter->alter_function(channel_state_ptr->data, command_alter->userdata);
+	//else: did not find the referenced note - not an error
+}
+void notelib_internals_stop_note
+(struct notelib_internals* const internals, const union notelib_command_data* const command_data_ptr,
+ notelib_instrument_uint instrument_count, notelib_channel_uint* const active_channel_count_array){
+	const struct notelib_command_stop_note* command_stop = &command_data_ptr->stop;
+	struct notelib_channel* channel_state_ptr;
+	struct notelib_channel* last_channel_state_ptr;
+	size_t instrument_state_size;
+	notelib_instrument_uint instrument_index;
+	if(notelib_internals_find_note
+	   (internals, instrument_count, active_channel_count_array, //aux in
+	    command_stop->note_id, //in
+	    &channel_state_ptr, &last_channel_state_ptr, &instrument_state_size, &instrument_index)){ //out
+		//note found
+		if(channel_state_ptr != last_channel_state_ptr)
+			memcpy(channel_state_ptr, last_channel_state_ptr, instrument_state_size);
+		--active_channel_count_array[instrument_index];
+	}//else: did not find the referenced note - not an error
 }
 void notelib_internals_trigger
 (const union notelib_command_data* command_data_ptr){
@@ -449,6 +494,10 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 					    notelib_track_immediate_get_initialized_channel_buffer_ptr(internals, immediate_track_ptr)))
 						fputs("WARNING (notelib): Received (immediate) note command referencing disabled instrument! (Ignoring...)\n", stderr);
 					break;
+				case notelib_command_type_stop_note:
+					notelib_internals_stop_note
+					(internals, command_data_ptr, instrument_count, still_active_channel_counts);
+					break;
 				case notelib_command_type_reset:
 					fputs("WARNING (notelib): Received (position) reset command on immediate track! (Ignoring...)\n", stderr);
 					break;
@@ -529,6 +578,10 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 						    notelib_track_get_initialized_channel_buffer_ptr(internals, track_ptr)))
 							fputs("WARNING (notelib): Received note command referencing disabled instrument! (Ignoring...)\n", stderr);
 					}break;
+					case notelib_command_type_stop_note:
+						notelib_internals_stop_note
+						(internals, command_data_ptr, instrument_count, still_active_channel_counts);
+						break;
 					case notelib_command_type_reset:
 						new_position = 0;
 						break;
