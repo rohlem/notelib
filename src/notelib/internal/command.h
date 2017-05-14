@@ -3,6 +3,10 @@
 
 #include "../notelib.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif//#ifdef __cplusplus
+
 enum notelib_command_type {
 	notelib_command_type_note,
 	notelib_command_type_stop_note,
@@ -47,5 +51,9 @@ struct notelib_command_immediate{
 	union notelib_command_data data;
 };
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+
+#ifdef __cplusplus
+}
+#endif//#ifdef __cplusplus
 
 #endif//#ifndef NOTELIB_INTERNAL_COMMAND_H_
