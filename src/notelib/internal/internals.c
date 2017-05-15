@@ -332,7 +332,7 @@ static inline bool notelib_internals_find_note //I really hope this gets inline-
 					 struct notelib_channel*);
 				if(channel_state_ptr->current_note_id == note_id){
 					//found note
-					*channel_state_ptr_target = instrument_state_data;
+					*channel_state_ptr_target = channel_state_ptr;
 					*last_channel_state_ptr_target =
 						NOTELIB_INTERNAL_OFFSET_AND_CAST
 						(instrument_state_data,
