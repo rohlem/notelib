@@ -362,3 +362,36 @@ enum notelib_status notelib_alter_immediate
 
 	return notelib_answer_success;
 }
+
+enum notelib_status notelib_stop
+(notelib_state_handle notelib_state,
+ notelib_note_id_uint note_id,
+ notelib_track_uint track_index, notelib_position position){
+	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
+	if(notelib_track_is_disabled(track_ptr))
+		return notelib_answer_failure_invalid_track;
+
+	struct notelib_command stop_command;
+	stop_command.type = notelib_command_type_stop_note;
+	stop_command.data.stop.note_id = note_id;
+	stop_command.position = position;
+
+	if(!circular_buffer_write(notelib_track_get_command_queue(track_ptr), &stop_command))
+		return notelib_answer_failure_insufficient_command_queue_entries;
+
+	return notelib_answer_success;
+}
+enum notelib_status notelib_stop_immediate
+(notelib_state_handle notelib_state,
+ notelib_note_id_uint note_id){
+	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
+
+	struct notelib_command_immediate stop_command;
+	stop_command.type = notelib_command_type_stop_note;
+	stop_command.data.stop.note_id = note_id;
+
+	if(!circular_buffer_write(notelib_track_immediate_get_command_queue(track_ptr), &stop_command))
+		return notelib_answer_failure_insufficient_command_queue_entries;
+
+	return notelib_answer_success;
+}

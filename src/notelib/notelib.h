@@ -163,6 +163,14 @@ enum notelib_status notelib_alter_immediate
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id);
 
+enum notelib_status notelib_stop
+(notelib_state_handle notelib_state,
+ notelib_note_id_uint note_id,
+ notelib_track_uint track_index, notelib_position position);
+enum notelib_status notelib_stop_immediate
+(notelib_state_handle notelib_state,
+ notelib_note_id_uint note_id);
+
 
 #include "internal/channel.h"
 
