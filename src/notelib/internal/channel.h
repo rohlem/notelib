@@ -5,6 +5,7 @@
 #include "alignment_utilities.h"
 
 #include <stdalign.h>
+#include <stddef.h>
 
 #include "../util/eclipse_codan_fix.hpp"
 
