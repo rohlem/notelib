@@ -1,4 +1,8 @@
-current status: R0 (first release); on hiatus (2 months minimum, 12 months expected, no upper limit)
+[on hiatus for at couple months into 2018; no upper limit]
+NOTE: master branch is outdated (missing some backported fixes), most recent development was on branch 'immediate-track'
+(There's not a lot of documentation though, good luck getting either of them to work...)
+
+current status: R0 (first release); on hiatus (see above)
 
 Notelib is a C11 library intended to abstract asynchronous communication of a main ("client") thread and an audio thread that generates waveform representations of "notes" the client thread issued.
 The basic structure looks as follows:
