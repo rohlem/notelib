@@ -1,5 +1,7 @@
 **[on hiatus for at least a couple of months into 2018; no upper limit]**
+
 ***NOTE: master branch is outdated (missing some backported fixes), most recent development was on branch 'immediate-track'***
+
 (There's not a lot of documentation though, good luck getting either of them to work...)
 
 **Current status: R0 (first release); on hiatus (2 months minimum, 12 months expected, no upper limit)**
