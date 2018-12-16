@@ -12,7 +12,7 @@ The basic structure looks as follows:
  
  c) A track is started with a given tempo and notes (and change tempo commands) are placed on it at given positions. Currently notes must be submitted sequentially.
  
-Currently this repository includes a rudimentary first version of notelib, as well as an example program ("main.c") including a minimal backend wrapper/"connector" ("back.h" and "back.c") for PortAudio (excluding that library - please get that yourself) and a couple manually-verifiable test cases (in "test").
+Currently this repository includes a rudimentary first version of notelib, as well as an example program ("main.c") including a minimal backend wrapper/"connector" ("back.h" and "back.c") for both PortAudio and libsoundio (excluding those libraries - please get them yourself) and a couple manually-verifiable test cases (in "test").
 
 ---
 
