@@ -38,7 +38,7 @@ typedef uint16_t notelib_note_id_uint;
 #define NOTELIB_NOTE_ID_UINT_MAX UINT16_MAX
 typedef uint16_t notelib_instrument_state_uint; //only needs to be able to contain largest struct notelib_channel.data's size
 typedef uint16_t notelib_step_uint;
-typedef  int16_t notelib_sample;
+typedef    float notelib_sample;
 typedef uint32_t notelib_sample_uint;
 #define NOTELIB_SAMPLE_UINT_MAX UINT32_MAX
 typedef uint8_t notelib_track_uint;
