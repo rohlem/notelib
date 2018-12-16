@@ -9,6 +9,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#define TEST_TEST_NOTELIB_SAMPLE_FORMAT_CODE "%f"
+
 struct notelib_params empty_params = {
 	.instrument_count = 0,
 	.inline_step_count = 0,
@@ -194,9 +196,9 @@ notelib_sample_uint sample_stair_step(notelib_sample* in, notelib_sample* out, n
 		if(stair_state->ttl <= 0) break;
 			if(stair_state->position == stair_state->step_width){
 				stair_state->position = 0;
-				printf("CHANGING VALUE; %d ", stair_state->value);
+				printf("CHANGING VALUE; "TEST_TEST_NOTELIB_SAMPLE_FORMAT_CODE" ", stair_state->value);
 				stair_state->value += stair_state->step_height;
-				printf("-> %d\n", stair_state->value);
+				printf("-> "TEST_TEST_NOTELIB_SAMPLE_FORMAT_CODE"\n", stair_state->value);
 			}
 		}
 	}
@@ -207,7 +209,7 @@ notelib_sample_uint sample_stair_step(notelib_sample* in, notelib_sample* out, n
 
 void sample_stair_cleanup(void* state){
 	struct sample_stair_state_data* data = state;
-	printf(" Cleaned up stair channel;\n  final position: %d\n  final value: %d\n", data->position, data->value);
+	printf(" Cleaned up stair channel;\n  final position: %d\n  final value: "TEST_TEST_NOTELIB_SAMPLE_FORMAT_CODE"\n", data->position, data->value);
 }
 
 notelib_instrument_uint sample_stair_instrument_index;
