@@ -29,6 +29,9 @@
 // NOTELIB_LOCAL could/should be used for symbol declarations not part of the API, but GCC's compile flag -fvisibility=hidden or the directive '#pragma GCC visibility push(hidden)' honestly seem like better alternatives. Also, since it doesn't matter for dynamic linking, and static linking is post-optimized anyway, it really lacks any urgency for me to decide on anything.
 
 #if defined(NOTELIB_SHARED) && NOTELIB_SHARED // defined as 1 if notelib is to be used as a shared library
+	#ifndef NOTELIB_INTERNAL_SHARED // if the user wants the shared library interface and didn't explicitly disable the "internal" state management API, better provide it before they miss it
+		#define NOTELIB_INTERNAL_SHARED 1
+	#endif
 	#if defined(BUILDING_NOTELIB_SHARED) && BUILDING_NOTELIB_SHARED // defined as 1 if we are building the shared library (instead of using it)
 		#define NOTELIB_API NOTELIB_UTIL_SHARED_EXPORT
 	#else
