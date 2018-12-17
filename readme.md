@@ -1,29 +1,31 @@
-**[on hiatus for at least a couple of months into 2018; no upper limit]**
+**[on hiatus for at least a couple of months into 2019; no upper limit]**
 
-***NOTE: master branch is outdated (missing some backported fixes), most recent development was on branch 'immediate-track'***
+**Current status: R1- (second release imminent); on hiatus (it's good enough for my use case; for now every new feature is a patch-fest, if I eventually return with more time it might end in a rewrite.)**
 
-(There's not a lot of documentation though, good luck getting either of them to work...)
+Notelib is a C11 library realizing a basic thread-safe communication scheme between controller ("client") code issuing commands to audio producing code (which renders waveforms into buffers).
 
-**Current status: R0 (first release); on hiatus (2 months minimum, 12 months expected, no upper limit)**
+To build/package notelib into a library, simply link together all compiled .c files from src/notelib, optionally including src/back.c.
 
-Notelib is a C11 library intended to abstract asynchronous communication of a main ("client") thread and an audio thread that generates waveform representations of "notes" the client thread issued.
+For shared library output, see src/notelib/util/shared_linkage_specifiers.h and src/back.h for possible configuration via macro definitions.
+
+The process is really simple; simple enough to provide a Makefile, but I don't know reliable cross-platform Make well enough. PRs welcome.
 
 ---
 
-The basic structure looks as follows:
+The basic structure from a "client" thread perspective:
 
- a) The notelib internals are initialized at a given position; this can be done when the audio backend is initialized, and hidden from the client program as desired.
- 
- b) Instruments are registered that define the way waveforms are generated.
- 
- c) A track is started with a given tempo and notes (and change tempo commands) are placed on it at given positions. Currently notes must be submitted sequentially.
- 
-Currently this repository includes a rudimentary first version of notelib, as well as an example program ("main.c") including a minimal backend wrapper/"connector" ("back.h" and "back.c") for PortAudio (excluding that library - please get that yourself) and a couple manually-verifiable test cases (in "test").
+ - initialize a notelib instance in a provided memory buffer
+ - (hook up an audio backend to regularly process/query audio: see back.c for examples implementations)
+ - register "instruments" (routines generating audio waveforms)
+ - start tracks (or use the always-on "immediate" track) to send commands ("notes" which instantiate instruments, tempo change or generic alter/trigger)
+ - (at some point stop and deinitialize the notelib instance)
+
+To see an example application, view main.c. It uses either of two example "backends" implemented in back.c - libsoundio or PortAudio. (You'll need to build and link one of these to compile/link/run the program.)
 
 ---
 
 **"Cricital" bugs (things that need to be fixed to guarantee it works correctly):**
- - struct notelib_track.tempo_ceil_interval_samples (used as an "enabled"-flag) is currently accessed from the audio thread without a cache-refreshing acquire-read, which is technically totally unsafe. Just add some way to implement that; possibly a "track enabling queue" or something useless like that.
+ - struct notelib_track.tempo_ceil_interval_samples (used as an "enabled"-flag) is currently accessed from the audio thread without a cache-refreshing acquire-read, which is technically totally unsafe. Just add some way to implement that; possibly a "track enabling queue" or something superfluous like that.
    (note how in contrast, everything else is only accessed when a respective command is read through a track's command queue, which involves such an acquire read operation.)
 
 **"Non-critical" to-dos (fixes/enhancements that would seriously improve the library interface):**
@@ -37,4 +39,4 @@ Currently this repository includes a rudimentary first version of notelib, as we
  - add further configuration options with macros and enums and stuff (there's probably a lot you _could_ do)
  - some minor optimizations probably, though honestly I don't think that's a big worry
 
-(- rewrite it in C++ to be more configurable in less than a fourth of its current code size ._.) (though I'm actually quite happy with how small its memory footprint turned out to be -u-)
+ - (maybe rewrite in some other language - like C++, or maybe Zig - providing easier customizability/extensibility)

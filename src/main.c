@@ -2,9 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#if 0
+
 //#include "test/test_circular_buffer.h"
 //#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"
-//#include "test/test_notelib_internals.h"
+#include "test/test_notelib_internals.h"
+
+int main(void)
+	{return (test_notelib_internals() == EXIT_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;}
+#else
 
 #include "notelib/notelib.h"
 #include "back.h"
@@ -48,6 +54,8 @@ notelib_sample_uint limit_step(notelib_sample* in, notelib_sample* out, notelib_
 	return samples_generated;
 }
 notelib_sample_uint limit_step2(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state){
+	(void)in;
+	(void)out;
 	struct limit_data* data = state;
 	if(data->lifespan > samples_requested){
 		data->lifespan -= samples_requested;
@@ -72,6 +80,7 @@ struct sine_step_data{
 	float frequency;
 };
 notelib_sample_uint sine_step(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state){
+	(void)in;
 	struct sine_step_data* data = state;
 	notelib_sample_uint position = data->position;
 	for(notelib_sample_uint i = 0; i < samples_requested; ++i){
@@ -105,8 +114,12 @@ struct instrument_setup_data{
 notelib_instrument_uint instrument_id;
 notelib_track_uint track_id;
 
+notelib_state_handle notelib_handle;
+
 bool play(struct instrument_setup_data note, notelib_position position){
-	enum notelib_status status = notelib_play(pa_back_notelib_handle, instrument_id, &note, track_id, position);
+	//notelib_note_id_uint note_id;
+	enum notelib_status status = notelib_play(notelib_handle, instrument_id, &note, track_id, position, NULL); //&note_id
+	//printf("#%hu: %d\n", note_id, note.sine.pitch);
 	if(status != notelib_status_ok){
 		printf("Error playing note (pitch=%d)!\n", (int)note.sine.pitch);
 		switch(status){
@@ -144,16 +157,18 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 	struct limit_data l4 = {.lifespan = samples_per_second/4};
 	struct limit_data l2 = {.lifespan = samples_per_second/2};
 	struct limit_data l1 = {.lifespan = samples_per_second/1};
+	(void)l1;
 
-	struct sine_setup_data s0 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 0};
-	struct sine_setup_data s1 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 2};
-	struct sine_setup_data s2 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 4};
-	struct sine_setup_data s3 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 5};
-	struct sine_setup_data s4 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 7};
-	struct sine_setup_data s5 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 9};
-	struct sine_setup_data s6 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 11};
-	struct sine_setup_data s7 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 12};
-	struct sine_setup_data s8 = {.sample_rate = samples_per_second, .amplitude = 0x800, .pitch = 14};
+	const notelib_sample moderate_amplitude = .04;
+	struct sine_setup_data s0 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 0};
+	struct sine_setup_data s1 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 2};
+	struct sine_setup_data s2 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 4};
+	struct sine_setup_data s3 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 5};
+	struct sine_setup_data s4 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 7};
+	struct sine_setup_data s5 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 9};
+	struct sine_setup_data s6 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 11};
+	struct sine_setup_data s7 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 12};
+	struct sine_setup_data s8 = {.sample_rate = samples_per_second, .amplitude = moderate_amplitude, .pitch = 14};
 
 	switch(part){
 	case  0:
@@ -179,6 +194,7 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 	case  6:
 	case 14:
 		play((struct instrument_setup_data){l8, s2}, start+0);
+		;//fallthrough
 	case 15:
 	case 16:
 		play((struct instrument_setup_data){l8, s2}, start+1);
@@ -260,34 +276,48 @@ int main(){
 	//return test_circular_buffer_liberal_reader_unsynchronized();
 	//return test_notelib_internals();
 
-	const size_t channel_state_size = sizeof(struct combined_step_data);
-
-//	printf("#RealExpense %d + %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data));
+	const size_t channel_state_size = NOTELIB_SIZEOF_SINGLE_CHANNEL_STATE(sizeof(struct combined_step_data));
+	//printf("#RealExpense %d + %d => %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data), (int)channel_state_size);
 
 	struct notelib_params params = {
 		.instrument_count = 1,
 		.inline_step_count = 2,
 		.reserved_inline_state_space = 30,
 		.internal_dual_buffer_size = 576,
-		.track_count = 1,
+#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+		.queued_immediate_command_count = 0,
+		.reserved_inline_immediate_initialized_channel_buffer_size = 0,
+		.initial_immediate_initialized_channel_buffer_size = 0,
+#endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
+		.regular_track_count = 1,
 		.queued_command_count = 8,
 		.reserved_inline_initialized_channel_buffer_size = 12*channel_state_size
 	};
 
-	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
+//	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
 
-	struct pa_back_init_data init_ret = pa_back_notelib_initialize(&params);
+	#if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
+		struct pa_back_init_data init_ret =
+			pa_back_notelib_initialize(&params);
+		notelib_handle = pa_back_notelib_handle;
+	#elif defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
+		struct sio_back_init_data init_ret =
+			sio_back_notelib_initialize(&params);
+		notelib_handle = sio_back_notelib_handle;
+	#else
+	#error NO BACKEND SELECTED
+	#endif
 	switch(init_ret.error.error_type){
-	case pa_back_error_notelib:
+	case notelib_back_error_notelib:
 		printf("Aborting due to notelib error!\n");
 		return EXIT_FAILURE;
-	case pa_back_error_backend:
+	case notelib_back_error_backend:
 		printf("Aborting due to backend (PortAudio) error!\n");
 		return EXIT_FAILURE;
 	default:
 		printf("Aborting due to unknown error (wtf?)!\n");
 		return EXIT_FAILURE;
-	case pa_back_error_none: break;
+	case notelib_back_error_none: break;
 	}
 
 	notelib_sample_uint samples_per_second = (notelib_sample_uint)(init_ret.sample_rate + 0.5); //http://stackoverflow.com/a/7563694 if you value non-integer sample rate preservation
@@ -308,7 +338,7 @@ int main(){
 			.cleanup = NULL
 		}
 	};
-	enum notelib_status ns = notelib_register_instrument(pa_back_notelib_handle, &instrument_id, 2, instrument_steps, channel_state_size);
+	enum notelib_status ns = notelib_register_instrument(notelib_handle, &instrument_id, 2, instrument_steps, channel_state_size);
 	if(ns != notelib_status_ok){
 		printf("Failed to register instrument!\n");
 		goto end;
@@ -317,7 +347,7 @@ int main(){
 
 //	printf("SAMP %d\n", (int)samples_per_second);
 
-	ns = notelib_start_track(pa_back_notelib_handle, &track_id, 12*channel_state_size, 8, samples_per_second);
+	ns = notelib_start_track(notelib_handle, &track_id, 12*channel_state_size, 8, samples_per_second);
 	if(ns != notelib_status_ok){
 		printf("Failed to start track!\n");
 		goto end;
@@ -328,7 +358,7 @@ int main(){
 	play((struct instrument_setup_data){l8, s0}, 8);
 */
 
-	gen.notelib_state = pa_back_notelib_handle;
+	gen.notelib_state = notelib_handle;
 	gen.position = 10;
 	gen.samples_per_second = samples_per_second;
 	gen.part = 0;
@@ -338,18 +368,27 @@ int main(){
 	system("pause");
 end:;
 	printf("Deinitializing...\n");
-	struct pa_back_error deinit_error = pa_back_notelib_deinitialize();
+	struct notelib_back_error deinit_error =
+	#if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
+		pa_back_notelib_deinitialize();
+	#elif defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
+		sio_back_notelib_deinitialize();
+	#else
+	#error NO BACKEND SELECTED
+	#endif
 	switch(deinit_error.error_type){
-	case pa_back_error_notelib:
+	case notelib_back_error_notelib:
 		printf("Notelib error when deinitializing!\n");
 		return EXIT_FAILURE;
-	case pa_back_error_backend:
+	case notelib_back_error_backend:
 		printf("Backend (PortAudio) error when deinitializing!\n");
 		return EXIT_FAILURE;
 	default:
 		printf("Unknown error when deinitializing (wtf?)!\n");
 		return EXIT_FAILURE;
-	case pa_back_error_none: break;
+	case notelib_back_error_none: break;
 	}
+	notelib_handle = NULL;
 	return EXIT_SUCCESS;
 }
+#endif
