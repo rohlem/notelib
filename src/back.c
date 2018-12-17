@@ -20,7 +20,7 @@
 PaStream* pa_back_pa_stream = NULL;
 
 unsigned char pa_back_notelib_buffer[NOTELIB_PA_BACK_PROVIDED_BUFFER_SIZE];
-notelib_state_handle pa_back_notelib_handle = NULL;
+NOTELIB_BACKEND_API notelib_state_handle pa_back_notelib_handle = NULL;
 
 int pa_back_callback
 (const void *input, void *output, unsigned long frameCount,
@@ -52,7 +52,7 @@ int pa_back_callback
 	return paContinue;
 }
 
-struct notelib_back_init_data pa_back_notelib_initialize(const struct notelib_params* params){
+NOTELIB_BACKEND_API struct notelib_back_init_data pa_back_notelib_initialize(const struct notelib_params* params){
 	struct notelib_back_init_data ret;
 
 	enum notelib_status ns = notelib_internals_init(pa_back_notelib_buffer, NOTELIB_PA_BACK_PROVIDED_BUFFER_SIZE, params);
@@ -110,7 +110,7 @@ struct notelib_back_init_data pa_back_notelib_initialize(const struct notelib_pa
 	return ret;
 }
 
-struct notelib_back_error pa_back_notelib_deinitialize(){
+NOTELIB_BACKEND_API struct notelib_back_error pa_back_notelib_deinitialize(){
 	struct notelib_back_error error;
 	error.error_type = notelib_back_error_none;
 	PaError pa_error = Pa_Terminate();
@@ -138,7 +138,7 @@ struct SoundIoDevice* sio_back_sio_device = NULL;
 struct SoundIoOutStream* sio_back_sio_outstream = NULL;
 
 unsigned char sio_back_notelib_buffer[NOTELIB_SIO_BACK_PROVIDED_BUFFER_SIZE];
-notelib_state_handle sio_back_notelib_handle = NULL;
+NOTELIB_BACKEND_API notelib_state_handle sio_back_notelib_handle = NULL;
 
 
 static int imin(int a, int b) {return a <= b ? a : b;}
@@ -200,7 +200,7 @@ static void underflow_callback(struct SoundIoOutStream *outstream){
 	fprintf(stderr, "underflow %d\n", count++);
 }
 
-struct sio_back_init_data sio_back_notelib_initialize(const struct notelib_params* params){
+NOTELIB_BACKEND_API struct sio_back_init_data sio_back_notelib_initialize(const struct notelib_params* params){
 	struct sio_back_init_data ret;
 
 	enum notelib_status ns = notelib_internals_init(sio_back_notelib_buffer, NOTELIB_SIO_BACK_PROVIDED_BUFFER_SIZE, params);
@@ -323,7 +323,7 @@ struct sio_back_init_data sio_back_notelib_initialize(const struct notelib_param
 	ret.error.error_type = notelib_back_error_none;
 	return ret;
 }
-struct notelib_back_error     sio_back_notelib_deinitialize(){
+NOTELIB_BACKEND_API struct notelib_back_error     sio_back_notelib_deinitialize(){
 	struct notelib_back_error error;
 	error.error_type = notelib_back_error_none;
 	soundio_outstream_destroy(sio_back_sio_outstream);
