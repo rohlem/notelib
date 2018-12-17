@@ -8,6 +8,8 @@ extern "C" {
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "util/shared_linkage_specifiers.h"
+
 enum notelib_status{
 	notelib_status_ok = 0,
 	notelib_answer_success = notelib_status_ok,
@@ -62,10 +64,10 @@ struct notelib_params{
 
 
 /*
-enum notelib_status notelib_init
+NOTELIB_API enum notelib_status notelib_init
 (notelib_state_handle* state_handle_dest,
  const struct notelib_params* params, void* backend_params);
-enum notelib_status notelib_deinit(notelib_state_handle state_handle);
+NOTELIB_API enum notelib_status notelib_deinit(notelib_state_handle state_handle);
 */
 
 
@@ -94,80 +96,80 @@ typedef void (*notelib_trigger_function)(void* userdata);
 typedef void (*notelib_alter_function)(void* channel_state, void* userdata);
 
 
-enum notelib_status notelib_register_instrument
+NOTELIB_API enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint* instrument_index_dest,
  notelib_step_uint step_count,
  const struct notelib_processing_step_spec* steps,
  notelib_channel_uint channel_count);
-enum notelib_status notelib_set_instrument_channel_count
+NOTELIB_API enum notelib_status notelib_set_instrument_channel_count
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  notelib_channel_uint channel_count);
-enum notelib_status notelib_unregister_instrument
+NOTELIB_API enum notelib_status notelib_unregister_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index);
 /*notelib_step_uint notelib_instrument_get_step_count
 (notelib_state_handle notelib_state, notelib_instrument_handle handle);*/
 
-enum notelib_status notelib_start_track
+NOTELIB_API enum notelib_status notelib_start_track
 (notelib_state_handle notelib_state,
  notelib_track_uint* track_index_dest,
  uint32_t initialized_channel_buffer_size,
  notelib_position tempo_interval,
  notelib_sample_uint tempo_interval_samples);
-enum notelib_status notelib_reset_track_position
+NOTELIB_API enum notelib_status notelib_reset_track_position
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index, notelib_position position);
-enum notelib_status notelib_set_track_tempo
+NOTELIB_API enum notelib_status notelib_set_track_tempo
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index, notelib_position position,
  notelib_position tempo_interval, notelib_sample_uint tempo_interval_samples);
-enum notelib_status notelib_set_track_initialized_channel_buffer_size
+NOTELIB_API enum notelib_status notelib_set_track_initialized_channel_buffer_size
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index,
  uint32_t initialized_channel_buffer_size);
 //TODO: notelib_set_immediate_track_initialized_channel_buffer_size
-enum notelib_status notelib_stop_track
+NOTELIB_API enum notelib_status notelib_stop_track
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index);
 
 
-enum notelib_status notelib_play
+NOTELIB_API enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
  notelib_track_uint track_index, notelib_position position,
  notelib_note_id_uint* note_id_target);
-enum notelib_status notelib_play_immediate
+NOTELIB_API enum notelib_status notelib_play_immediate
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
  notelib_note_id_uint* note_id_target);
 
-enum notelib_status notelib_enqueue_trigger
+NOTELIB_API enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position);
-enum notelib_status notelib_immediate_trigger
+NOTELIB_API enum notelib_status notelib_immediate_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata);
 
-enum notelib_status notelib_alter
+NOTELIB_API enum notelib_status notelib_alter
 (notelib_state_handle notelib_state,
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id,
  notelib_track_uint track_index, notelib_position position);
-enum notelib_status notelib_alter_immediate
+NOTELIB_API enum notelib_status notelib_alter_immediate
 (notelib_state_handle notelib_state,
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id);
 
-enum notelib_status notelib_stop
+NOTELIB_API enum notelib_status notelib_stop
 (notelib_state_handle notelib_state,
  notelib_note_id_uint note_id,
  notelib_track_uint track_index, notelib_position position);
-enum notelib_status notelib_stop_immediate
+NOTELIB_API enum notelib_status notelib_stop_immediate
 (notelib_state_handle notelib_state,
  notelib_note_id_uint note_id);
 

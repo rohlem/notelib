@@ -18,7 +18,7 @@
 #include "../util/eclipse_codan_fix.hpp"
 
 //could possibly optimize to single realloc call in certain cases
-enum notelib_status notelib_register_instrument
+NOTELIB_API enum notelib_status notelib_register_instrument
 (notelib_state_handle notelib_state,
  notelib_instrument_uint* instrument_index_dest,
  notelib_step_uint step_count,
@@ -76,7 +76,7 @@ instrument_index_found:
 	return notelib_answer_success;
 }
 //could possibly optimize to single realloc call in certain cases
-enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle notelib_state, notelib_instrument_uint instrument_index, notelib_channel_uint channel_count){
+NOTELIB_API enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle notelib_state, notelib_instrument_uint instrument_index, notelib_channel_uint channel_count){
 	struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(notelib_state, instrument_index);
 	if(atomic_load_explicit(&instrument_ptr->active_channel_count, memory_order_acquire) != 0) //Would optimally not actually be required if the user is careful enough
 		return notelib_answer_failure_unknown;
@@ -101,7 +101,7 @@ enum notelib_status notelib_set_instrument_channel_count(notelib_state_handle no
 	free(ptr_to_free);
 	return notelib_answer_success;
 }
-enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_state, notelib_instrument_uint instrument_index){
+NOTELIB_API enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_state, notelib_instrument_uint instrument_index){
 	struct notelib_instrument* instrument_ptr = notelib_internals_get_instrument(notelib_state, instrument_index);
 	if(atomic_load_explicit(&instrument_ptr->active_channel_count, memory_order_acquire) != 0) //Would optimally not actually be required if the user is careful enough
 		return notelib_answer_failure_unknown;
@@ -116,7 +116,7 @@ enum notelib_status notelib_unregister_instrument(notelib_state_handle notelib_s
 }
 
 //TODO: For concurrency to be safe there has to be some sort of trigger for starting to query a track coming from the client thread. Implement that somehow!
-enum notelib_status notelib_start_track
+NOTELIB_API enum notelib_status notelib_start_track
 (notelib_state_handle notelib_state, notelib_track_uint* track_index_dest, uint32_t initialized_channel_buffer_size, notelib_position tempo_interval, notelib_sample_uint tempo_interval_samples){
 	if(tempo_interval_samples == 0)
 		return notelib_answer_failure_invalid_track_parameters_stopped;
@@ -144,7 +144,7 @@ track_found:;
 		return data_setup_status;
 	}
 }
-enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
+NOTELIB_API enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_state, notelib_track_uint track_index, notelib_position position){
 	struct notelib_command reset_command;
 	reset_command.type = notelib_command_type_reset;
 	reset_command.position = position;
@@ -153,7 +153,7 @@ enum notelib_status notelib_reset_track_position(notelib_state_handle notelib_st
 	else
 		return notelib_answer_failure_unknown;
 }
-enum notelib_status notelib_set_track_tempo
+NOTELIB_API enum notelib_status notelib_set_track_tempo
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index, notelib_position position,
  notelib_position tempo_interval,
@@ -171,7 +171,7 @@ enum notelib_status notelib_set_track_tempo
 	else
 		return notelib_answer_failure_unknown;
 }
-enum notelib_status notelib_set_track_initialized_channel_buffer_size
+NOTELIB_API enum notelib_status notelib_set_track_initialized_channel_buffer_size
 (notelib_state_handle notelib_state,
  notelib_track_uint track_index,
  uint32_t initialized_channel_buffer_size){
@@ -204,7 +204,7 @@ enum notelib_status notelib_set_track_initialized_channel_buffer_size
 	free(ptr_to_free);
 	return notelib_answer_success;
 }
-enum notelib_status notelib_stop_track(notelib_state_handle notelib_state, notelib_track_uint track_index){
+NOTELIB_API enum notelib_status notelib_stop_track(notelib_state_handle notelib_state, notelib_track_uint track_index){
 	struct notelib_track* track_ptr = notelib_internals_get_regular_track(notelib_state, track_index);
 	if(!notelib_track_is_disabled(track_ptr)){
 		notelib_track_disable(track_ptr);
@@ -214,7 +214,7 @@ enum notelib_status notelib_stop_track(notelib_state_handle notelib_state, notel
 	return notelib_answer_success;
 }
 
-enum notelib_status notelib_play
+NOTELIB_API enum notelib_status notelib_play
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
@@ -253,7 +253,7 @@ enum notelib_status notelib_play
 	}else
 		return command_construction_status;
 }
-enum notelib_status notelib_play_immediate
+NOTELIB_API enum notelib_status notelib_play_immediate
 (notelib_state_handle notelib_state,
  notelib_instrument_uint instrument_index,
  void* trigger_data,
@@ -290,7 +290,7 @@ enum notelib_status notelib_play_immediate
 		return command_construction_status;
 }
 
-enum notelib_status notelib_enqueue_trigger
+NOTELIB_API enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position){
@@ -309,7 +309,7 @@ enum notelib_status notelib_enqueue_trigger
 
 	return notelib_answer_success;
 }
-enum notelib_status notelib_immediate_trigger
+NOTELIB_API enum notelib_status notelib_immediate_trigger
 (notelib_state_handle notelib_state, notelib_trigger_function trigger, void* userdata){
 	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
 
@@ -324,7 +324,7 @@ enum notelib_status notelib_immediate_trigger
 	return notelib_answer_success;
 }
 
-enum notelib_status notelib_alter
+NOTELIB_API enum notelib_status notelib_alter
 (notelib_state_handle notelib_state,
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id,
@@ -345,7 +345,7 @@ enum notelib_status notelib_alter
 
 	return notelib_answer_success;
 }
-enum notelib_status notelib_alter_immediate
+NOTELIB_API enum notelib_status notelib_alter_immediate
 (notelib_state_handle notelib_state,
  notelib_alter_function alter, void* userdata,
  notelib_instrument_uint note_id){
@@ -363,7 +363,7 @@ enum notelib_status notelib_alter_immediate
 	return notelib_answer_success;
 }
 
-enum notelib_status notelib_stop
+NOTELIB_API enum notelib_status notelib_stop
 (notelib_state_handle notelib_state,
  notelib_note_id_uint note_id,
  notelib_track_uint track_index, notelib_position position){
@@ -381,7 +381,7 @@ enum notelib_status notelib_stop
 
 	return notelib_answer_success;
 }
-enum notelib_status notelib_stop_immediate
+NOTELIB_API enum notelib_status notelib_stop_immediate
 (notelib_state_handle notelib_state,
  notelib_note_id_uint note_id){
 	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
