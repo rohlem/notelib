@@ -168,7 +168,7 @@ size_t notelib_internals_size_requirements(const struct notelib_params* params)
 		     (params->queued_command_count+1, //adding 1 because of the design flaw that one buffer element is always introduced
 		      params->reserved_inline_initialized_channel_buffer_size + (params->reserved_inline_initialized_channel_buffer_size>0)); /*adding 1 because of the design flaw that one buffer element is always introduced*/}
 
-enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params){
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params){
 	// initial size check
 	if(space_available < notelib_internals_size_requirements(params))
 		return notelib_answer_failure_unknown;
@@ -239,7 +239,7 @@ enum notelib_status notelib_internals_init(void* position, size_t space_availabl
 	return notelib_answer_success;
 }
 
-enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
 	struct notelib_internals* internals = (struct notelib_internals*)state_handle;
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	struct notelib_track_immediate* track_immediate_ptr = notelib_internals_get_track_immediate(internals);
@@ -624,7 +624,7 @@ void notelib_internals_fill_buffer_part(struct notelib_internals* internals, not
 #endif//#if NOTELIB_INTERNAL_USE_INTERMEDIATE_MIXING_BUFFER
 }
 
-void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_requested){
+NOTELIB_INTERNAL_API void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_requested){
 	notelib_instrument_uint instrument_count = internals->instrument_count;
 	//This VLA is a slight memory concern;
 	//being only 255 entries maximum most stacks should be able to handle it (and if you're using that many concurrent instruments you should be able to spare it anyway),

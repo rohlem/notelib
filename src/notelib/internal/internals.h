@@ -8,6 +8,8 @@
 #include "instrument.h"
 #include "track.h"
 
+#include "../util/shared_linkage_specifiers.h"
+
 struct notelib_internals{
 	ALIGNAS_MAX3(struct notelib_instrument, struct circular_buffer, struct notelib_track)
 	notelib_note_id_uint next_note_id; //accessed strictly client-side (see inter_impl.c)
@@ -89,9 +91,9 @@ size_t notelib_internals_size_requirements(const struct notelib_params* params);
 
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
 
-enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params);
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params);
 
-enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle);
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle);
 
 void notelib_internals_execute_instrument_steps
 (struct notelib_channel* channel_state_front, struct notelib_channel* channel_state_back, size_t channel_state_size,
@@ -105,6 +107,6 @@ void cautiously_advance_track_position
 
 void notelib_internals_fill_buffer_part(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_requested, notelib_channel_uint* still_active_channel_count);
 
-void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_required);
+NOTELIB_INTERNAL_API void notelib_internals_fill_buffer(struct notelib_internals* internals, notelib_sample* out, notelib_sample_uint samples_required);
 
 #endif//#ifndef NOTELIB_INTERNAL_INTERNALS_H_
