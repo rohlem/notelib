@@ -152,7 +152,7 @@ struct notelib_track* notelib_internals_get_regular_track(struct notelib_interna
 		  track_index * notelib_internals_sizeof_track(internals->command_queue_size, internals->reserved_inline_initialized_channel_buffer_size),
 		  struct notelib_track*);}
 
-size_t notelib_internals_size_requirements(const struct notelib_params* params)
+NOTELIB_INTERNAL_API size_t notelib_internals_size_requirements(const struct notelib_params* params)
 	{return
 		 notelib_internals_offsetof_regular_tracks
 		 (params->instrument_count,
@@ -168,7 +168,7 @@ size_t notelib_internals_size_requirements(const struct notelib_params* params)
 		     (params->queued_command_count+1, //adding 1 because of the design flaw that one buffer element is always introduced
 		      params->reserved_inline_initialized_channel_buffer_size + (params->reserved_inline_initialized_channel_buffer_size>0)); /*adding 1 because of the design flaw that one buffer element is always introduced*/}
 
-NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params){
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(struct notelib_internals* internals, size_t space_available, const struct notelib_params* params){
 	// initial size check
 	if(space_available < notelib_internals_size_requirements(params))
 		return notelib_answer_failure_unknown;
@@ -178,7 +178,6 @@ NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, 
 #endif//#ifdef NOTELIB_NO_IMMEDIATE_TRACK
 
 	// initialization of internals' members
-	struct notelib_internals* internals = position;
 	const notelib_instrument_uint instrument_count = params->instrument_count;
 	internals->instrument_count  = instrument_count;
 	internals->inline_step_count = params->inline_step_count;
@@ -239,8 +238,7 @@ NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, 
 	return notelib_answer_success;
 }
 
-NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle){
-	struct notelib_internals* internals = (struct notelib_internals*)state_handle;
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(struct notelib_internals* internals){
 #ifndef NOTELIB_NO_IMMEDIATE_TRACK
 	struct notelib_track_immediate* track_immediate_ptr = notelib_internals_get_track_immediate(internals);
 	if(!notelib_track_immediate_is_initialized_channel_buffer_internal(internals, track_immediate_ptr))

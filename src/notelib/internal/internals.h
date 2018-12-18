@@ -87,13 +87,13 @@ struct notelib_track_immediate* notelib_internals_get_track_immediate(struct not
 #endif//#ifndef NOTELIB_NO_IMMEDIATE_TRACK
 struct notelib_track* notelib_internals_get_regular_track(struct notelib_internals* internals, notelib_track_uint track_index);
 
-size_t notelib_internals_size_requirements(const struct notelib_params* params);
+NOTELIB_INTERNAL_API size_t notelib_internals_size_requirements(const struct notelib_params* params);
 
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
 
-NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(void* position, size_t space_available, const struct notelib_params* params);
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_init(struct notelib_internals* internals, size_t space_available, const struct notelib_params* params);
 
-NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(notelib_state_handle state_handle);
+NOTELIB_INTERNAL_API enum notelib_status notelib_internals_deinit(struct notelib_internals* internals);
 
 void notelib_internals_execute_instrument_steps
 (struct notelib_channel* channel_state_front, struct notelib_channel* channel_state_back, size_t channel_state_size,
