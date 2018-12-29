@@ -4,12 +4,39 @@
 
 #if 0
 
-//#include "test/test_circular_buffer.h"
-//#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"
+#include "test/test_circular_buffer.h"
+#include "test/test_circular_buffer_liberal_reader_unsynchronized.h"
 #include "test/test_notelib_internals.h"
 
-int main(void)
-	{return (test_notelib_internals() == EXIT_SUCCESS) ? EXIT_SUCCESS : EXIT_FAILURE;}
+#include "notelib/internal.h"
+#include "notelib/internal/internals.h"
+
+#include <stdalign.h>
+
+int main(void){
+
+    size_t a = alignof(max_align_t);
+    printf("Alignment of max_align_t is %d (%x)\n", a, a);
+    a = alignof(struct notelib_internals);
+    printf("Alignment of notelib_internals is %d (%x)\n", a, a);
+
+    void *p[60];
+    for(int i = 0; i < 60; ++i){
+    	p[i] = malloc(123);
+		printf("The address obtained from malloc(123) is %" PRIxPTR"\n",
+				(uintptr_t)p[i]);
+    }
+    for(int i = 0; i < 60; ++i){
+		free(p[i]);
+    }
+
+
+	return (
+			(test_circular_buffer() == EXIT_SUCCESS)
+			&& (test_circular_buffer_liberal_reader_unsynchronized() == EXIT_SUCCESS)
+			&& (test_notelib_internals() == EXIT_SUCCESS)
+		) ? EXIT_SUCCESS : EXIT_FAILURE;
+}
 #else
 
 #include "notelib/notelib.h"
