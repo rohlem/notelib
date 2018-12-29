@@ -10,7 +10,7 @@ extern "C" {
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "stdint.h"
 
 
 //Data size is always an integer multiple of element_size and only one element can be read and written at a time => guarantees contiguous memory.

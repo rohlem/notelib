@@ -3,7 +3,7 @@
 #include "alignment_utilities.h"
 #include "internals.h"
 
-#include <stdint.h>
+#include "../util/stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
 

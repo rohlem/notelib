@@ -2,7 +2,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "notelib/util/stdint.h"
 #include <stdio.h>
 #include <math.h>
 #include <string.h>

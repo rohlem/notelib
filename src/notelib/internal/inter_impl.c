@@ -12,7 +12,7 @@
 
 #include <stdatomic.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "../util/stdint.h"
 #include <stdlib.h>
 
 #include "../util/eclipse_codan_fix.hpp"

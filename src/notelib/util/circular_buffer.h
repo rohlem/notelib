@@ -8,7 +8,7 @@
 #include <stdalign.h>
 #include <stdbool.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "stdint.h"
 
 #ifndef NOTELIB_UTIL_CIRCULAR_BUFFER_DATA_ALIGNMENT
 #define NOTELIB_UTIL_CIRCULAR_BUFFER_DATA_ALIGNMENT alignof(max_align_t)

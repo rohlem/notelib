@@ -6,7 +6,7 @@ extern "C" {
 #endif//#ifdef __cplusplus
 
 #include <stdbool.h>
-#include <stdint.h>
+#include "util/stdint.h"
 
 #include "util/shared_linkage_specifiers.h"
 

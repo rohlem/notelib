@@ -28,6 +28,6 @@
 
 #include <stdalign.h>
 #include <stddef.h>
-#include <stdint.h>
+#include "util/stdint.h"
 
 #endif//#ifndef NOTELIB_INTERNAL_H_
