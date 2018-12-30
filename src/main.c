@@ -1,4 +1,5 @@
 #include <stddef.h>
+#include "notelib/util/stdint.h"
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -54,25 +55,25 @@ int main(void){
 #endif//#ifndef M_TAU
 
 struct limit_data{
-	notelib_sample_uint lifespan;
+	uint32_t lifespan;
 };
 #define MAX(A, B) ((A) > (B) ? (A) : (B))
 #define MIN(A, B) ((A) < (B) ? (A) : (B))
 notelib_sample_uint limit_step(notelib_sample* in, notelib_sample* out, notelib_sample_uint samples_requested, void* state){
 	struct limit_data* data = state;
-	notelib_sample_uint lifespan = data->lifespan;
+	uint32_t lifespan = data->lifespan;
 	notelib_sample_uint samples_generated;
 	notelib_sample_uint dropoff = 256;
-	notelib_sample_uint lifespan_before_dropoff = lifespan > dropoff ? lifespan - dropoff : 0;
+	uint32_t lifespan_before_dropoff = lifespan > dropoff ? lifespan - dropoff : 0;
 	if(lifespan_before_dropoff >= samples_requested)
 		samples_generated = samples_requested;
 	else{
-		notelib_sample_uint          lifespan_in_dropoff = MIN(dropoff, lifespan);
+		uint32_t                     lifespan_in_dropoff = MIN(dropoff, lifespan);
 		notelib_sample_uint samples_requested_in_dropoff = samples_requested - lifespan_before_dropoff;
 		notelib_sample_uint           samples_in_dropoff = MIN(lifespan_in_dropoff, samples_requested_in_dropoff);
-		notelib_sample_uint lifespan_in_dropoff_start_offset = dropoff - lifespan_in_dropoff;
+		uint32_t lifespan_in_dropoff_start_offset = dropoff - lifespan_in_dropoff;
 		for(notelib_sample_uint i = 0; i < samples_in_dropoff; ++i){
-			notelib_sample_uint index = i + lifespan_before_dropoff;
+			uint32_t index = i + lifespan_before_dropoff;
 			out[index] = (in[index]*(dropoff - (i+lifespan_in_dropoff_start_offset)))/dropoff;
 		}
 		samples_generated = MIN(lifespan, samples_requested);
@@ -88,7 +89,7 @@ notelib_sample_uint limit_step2(notelib_sample* in, notelib_sample* out, notelib
 		data->lifespan -= samples_requested;
 		return samples_requested;
 	}else{
-		notelib_sample_uint temp = data->lifespan;
+		uint32_t temp = data->lifespan;
 		data->lifespan = 0;
 		return temp;
 	}
@@ -179,7 +180,7 @@ bool play(struct instrument_setup_data note, notelib_position position){
 	return true;
 }
 
-notelib_position big_play(notelib_sample_uint samples_per_second, notelib_position start, unsigned int part){
+notelib_position big_play(uint32_t samples_per_second, notelib_position start, unsigned int part){
 	struct limit_data l8 = {.lifespan = samples_per_second/8};
 	struct limit_data l4 = {.lifespan = samples_per_second/4};
 	struct limit_data l2 = {.lifespan = samples_per_second/2};
@@ -277,13 +278,14 @@ notelib_position big_play(notelib_sample_uint samples_per_second, notelib_positi
 struct gen_data {
 	notelib_state_handle notelib_state;
 	notelib_position position;
-	notelib_sample_uint samples_per_second;
+	uint32_t samples_per_second;
 	unsigned int part;
 } gen;
 
 void gen_play(void* gen_data_ptr){
 	struct gen_data* gen = (struct gen_data*) gen_data_ptr;
 	unsigned int part = gen->part;
+	notelib_handle = gen->notelib_state;
 	gen->position = big_play(gen->samples_per_second, gen->position, part);
 	if(part < 17){
 		notelib_enqueue_trigger(gen->notelib_state, gen_play, gen_data_ptr, track_id, gen->position);
@@ -299,9 +301,6 @@ struct combined_step_data{
 #include "notelib/internal/internals.h"
 
 int main(){
-	//return test_circular_buffer();
-	//return test_circular_buffer_liberal_reader_unsynchronized();
-	//return test_notelib_internals();
 
 	const size_t channel_state_size = NOTELIB_SIZEOF_SINGLE_CHANNEL_STATE(sizeof(struct combined_step_data));
 	//printf("#RealExpense %d + %d => %d\n", (int)sizeof(struct limit_data), (int)sizeof(struct sine_step_data), (int)channel_state_size);
@@ -323,31 +322,29 @@ int main(){
 
 //	printf("size requirement: %X", (unsigned int)notelib_internals_size_requirements(&params));
 
-	#if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
-		struct pa_back_init_data init_ret =
-			pa_back_notelib_initialize(&params);
-		notelib_handle = pa_back_notelib_handle;
-	#elif defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
-		struct sio_back_init_data init_ret =
-			sio_back_notelib_initialize(&params);
-		notelib_handle = sio_back_notelib_handle;
-	#else
-	#error NO BACKEND SELECTED
-	#endif
-	switch(init_ret.error.error_type){
-	case notelib_back_error_notelib:
+	struct notelib_backend_generic_init_data init_ret = notelib_backend_initialize(&params);
+
+	switch(init_ret.error_info.type){
+	case notelib_backend_error_notelib:
 		printf("Aborting due to notelib error!\n");
 		return EXIT_FAILURE;
-	case notelib_back_error_backend:
-		printf("Aborting due to backend (PortAudio) error!\n");
+	case notelib_backend_error_backend:
+		printf("Aborting due to backend error(s)!\nList of errors:");
+		const struct notelib_backend_generic_info* generic_info_it = notelib_backend_info;
+		while(generic_info_it->name){
+			printf("%s (version %s) error: %s\n", generic_info_it->name, generic_info_it->version, generic_info_it->error_description);
+			++generic_info_it;
+		}
 		return EXIT_FAILURE;
 	default:
 		printf("Aborting due to unknown error (wtf?)!\n");
 		return EXIT_FAILURE;
-	case notelib_back_error_none: break;
+	case notelib_backend_error_none: break;
 	}
 
-	notelib_sample_uint samples_per_second = (notelib_sample_uint)(init_ret.sample_rate + 0.5); //http://stackoverflow.com/a/7563694 if you value non-integer sample rate preservation
+	notelib_handle = init_ret.notelib_state;
+
+	notelib_sample_uint samples_per_second = (notelib_sample_uint)(init_ret.audio_info.sample_rate + 0.5); //http://stackoverflow.com/a/7563694 if you value non-integer sample rate preservation
 
 	struct notelib_processing_step_spec instrument_steps[2] = {
 		{
@@ -395,25 +392,18 @@ int main(){
 	system("pause");
 end:;
 	printf("Deinitializing...\n");
-	struct notelib_back_error deinit_error =
-	#if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
-		pa_back_notelib_deinitialize();
-	#elif defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
-		sio_back_notelib_deinitialize();
-	#else
-	#error NO BACKEND SELECTED
-	#endif
-	switch(deinit_error.error_type){
-	case notelib_back_error_notelib:
+	struct notelib_backend_generic_error deinit_error = notelib_backend_deinitialize(notelib_handle);
+	switch(deinit_error.type){
+	case notelib_backend_error_notelib:
 		printf("Notelib error when deinitializing!\n");
 		return EXIT_FAILURE;
-	case notelib_back_error_backend:
-		printf("Backend (PortAudio) error when deinitializing!\n");
+	case notelib_backend_error_backend:
+		printf("Backend error when deinitializing!\n");
 		return EXIT_FAILURE;
 	default:
 		printf("Unknown error when deinitializing (wtf?)!\n");
 		return EXIT_FAILURE;
-	case notelib_back_error_none: break;
+	case notelib_backend_error_none: break;
 	}
 	notelib_handle = NULL;
 	return EXIT_SUCCESS;
