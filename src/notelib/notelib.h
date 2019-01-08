@@ -75,10 +75,13 @@ typedef notelib_sample_uint (*notelib_processing_step_function)
         (notelib_sample* in, notelib_sample* out,
          notelib_sample_uint samples_requested,
          void* state);
-typedef void                (*notelib_processing_step_setup_function)
+typedef void                (*notelib_processing_step_setup_function) //TODO: reevaluate if these should really be a part of the processing_step_spec (therefore the instrument spec/"contract") or could maybe be more ad-hoc, seeing them as "an initial alter function"
         (void* trigger_data, void* state_data);
 typedef void                (*notelib_processing_step_cleanup_function)
         (void* state);
+
+//TODO: (like mentioned above) possibly merge setup functions and alter functions into one mechanism.
+//Setup functions currently have some poorly designed "safety hints" in place that don't do much, while alter functions leave you completely in the dark. TODO: Extrapolate meaningful "safe" API, and offer both side-by-side.
 
 struct notelib_processing_step_spec{
 	notelib_processing_step_setup_function setup;
@@ -93,7 +96,7 @@ struct notelib_instrument;
 typedef struct notelib_instrument* notelib_instrument_handle;
 
 typedef void (*notelib_trigger_function)(void* userdata);
-typedef void (*notelib_alter_function)(void* channel_state, void* userdata);
+typedef void (*notelib_alter_function)(void* channel_state, void* userdata); //TODO: unify parameter order with notelib_processing_step_setup_function
 
 
 NOTELIB_API enum notelib_status notelib_register_instrument
