@@ -151,7 +151,7 @@ NOTELIB_API enum notelib_status notelib_enqueue_trigger
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata,
  notelib_track_uint track_index, notelib_position position);
-NOTELIB_API enum notelib_status notelib_immediate_trigger
+NOTELIB_API enum notelib_status notelib_enqueue_trigger_immediate
 (notelib_state_handle notelib_state,
  notelib_trigger_function trigger, void* userdata);
 

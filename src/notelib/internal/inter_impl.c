@@ -309,7 +309,7 @@ NOTELIB_API enum notelib_status notelib_enqueue_trigger
 
 	return notelib_answer_success;
 }
-NOTELIB_API enum notelib_status notelib_immediate_trigger
+NOTELIB_API enum notelib_status notelib_enqueue_trigger_immediate
 (notelib_state_handle notelib_state, notelib_trigger_function trigger, void* userdata){
 	struct notelib_track_immediate* track_ptr = notelib_internals_get_track_immediate(notelib_state);
 
