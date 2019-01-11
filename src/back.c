@@ -662,7 +662,7 @@ static const unsigned int notelib_backend_underflow_prevention_step = 12;
 #if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
 
 
-	//TODO: add underflow prevention mechanism equivalent to the one for libsoundio
+	//TODO: add underflow prevention mechanism equivalent to the one for libsoundio... maybe? I only now just realized that we never actually return less than the maximum frame count in the callback. So we _should always be safe... I think.
 
 	#include "portaudio.h"
 
@@ -671,6 +671,8 @@ static const unsigned int notelib_backend_underflow_prevention_step = 12;
 	 const PaStreamCallbackTimeInfo* timeInfo,
 	 PaStreamCallbackFlags statusFlags,
 	 void *userData){
+		//if(statusFlags & paOutputUnderflow)
+			///*TODO: handle underflow*/;
 		(void)input;
 		(void)timeInfo;
 		(void)statusFlags;
