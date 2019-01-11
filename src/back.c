@@ -164,7 +164,7 @@ NOTELIB_BACKEND_API struct notelib_backend_generic_error notelib_backend_deiniti
 		#undef NOTELIB_BACKEND_DEINITIALIZE_CASE
 
 		default:
-			printf("ERROR: unknown (corrupt?) notelib backend (id #%d) in use by notelib_state passed to notelib_backend_deinitialize; was this state created via notelib_backend_initialize?\nFailed to free memory!", selection);
+			fprintf(stderr, "ERROR: unknown (corrupt?) notelib backend (id #%d) in use by notelib_state passed to notelib_backend_deinitialize; was this state created via notelib_backend_initialize?\nFailed to free memory!", selection);
 			ret_error.type = notelib_backend_error_notelib;
 			ret_error.notelib = notelib_answer_failure_unknown;
 	}
@@ -249,7 +249,7 @@ NOTELIB_BACKEND_API struct notelib_backend_generic_error notelib_backend_deiniti
 		#undef NOTELIB_BACKEND_DEINITIALIZE_CASE
 
 		default:
-			printf("ERROR: unknown (corrupt?) notelib backend (id #%d) in use by notelib_state passed to notelib_backend_deinitialize_no_free; was this state created via notelib_backend_initialize_in?\nFailed to free memory!", selection);
+			fprintf(stderr, "ERROR: unknown (corrupt?) notelib backend (id #%d) in use by notelib_state passed to notelib_backend_deinitialize_no_free; was this state created via notelib_backend_initialize_in?\nFailed to free memory!", selection);
 			ret_error.type = notelib_backend_error_notelib;
 			ret_error.notelib = notelib_answer_failure_unknown;
 	}
