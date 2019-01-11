@@ -393,21 +393,30 @@ void notelib_backend_dealloc_internals_for_given_hidden_state(notelib_state_hand
 }
 
 
+
+//makeshift underflow counter measure
+static unsigned int underflow_prevention = 0;
+static const unsigned int underflow_prevention_step = 12;
+
 #if defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
 
 
 	static int imin(int a, int b) {return a <= b ? a : b;}
+	static int imax(int a, int b) {return a >= b ? a : b;}
 	static void write_sample_float32ne(char *ptr, notelib_sample sample) {
 		*((float*)ptr) = sample;
 	}
 	static notelib_sample sio_back_intermediate_audio_buffer[1<<12];
+	static int last_max_frame_count = 0;
 	static void write_callback(struct SoundIoOutStream *outstream, int frame_count_min, int frame_count_max) {
 		notelib_state_handle notelib_handle = outstream->userdata;
+
+		last_max_frame_count = frame_count_max;
 
 		struct SoundIoChannelArea *areas;
 		int err;
 
-		int frames_left = frame_count_min;(void)frame_count_max;//min(frame_count_max, max(/*10 ms*/float_sample_rate*.01, frame_count_min));
+		int frames_left = imin(imax(frame_count_min, underflow_prevention), frame_count_max);//min(frame_count_max, max(outstream->sample_rate*.01/* = 10 ms*/, frame_count_min));
 
 		while(frames_left > 0){
 			int frame_count = frames_left;
@@ -453,7 +462,12 @@ void notelib_backend_dealloc_internals_for_given_hidden_state(notelib_state_hand
 	static void underflow_callback(struct SoundIoOutStream *outstream){
 		(void)outstream;
 		static int count = 0;
-		fprintf(stderr, "underflow %d\n", count++);
+		if(underflow_prevention){
+			//outstream->write_callback(outstream, imin(underflow_prevention, last_max_frame_count), last_max_frame_count); //worked in testing, not sure if this has any actual benefit
+			//alternative prevention strategy: underflow_prevention <<= 1;
+		}//alternative prevention strategy: else underflow_prevention = 1;
+		underflow_prevention += underflow_prevention_step;
+		fprintf(stderr, "underflow %d | p -> %d\n", count++, underflow_prevention);
 	}
 
 	static struct notelib_backend_libsoundio_data const notelib_backend_libsoundio_data_empty = {
@@ -621,6 +635,8 @@ void notelib_backend_dealloc_internals_for_given_hidden_state(notelib_state_hand
 #endif
 #if defined(NOTELIB_BACKEND_PORTAUDIO) && NOTELIB_BACKEND_PORTAUDIO
 
+
+	//TODO: add underflow prevention mechanism equivalent to the one for libsoundio
 
 	#include "portaudio.h"
 
