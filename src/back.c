@@ -394,12 +394,20 @@ void notelib_backend_dealloc_internals_for_given_hidden_state(notelib_state_hand
 
 
 
-//makeshift underflow counter measure
-static unsigned int underflow_prevention = 0;
-static const unsigned int underflow_prevention_step = 12;
+static const unsigned int notelib_backend_underflow_prevention_step = 12;
 
 #if defined(NOTELIB_BACKEND_LIBSOUNDIO) && NOTELIB_BACKEND_LIBSOUNDIO
 
+
+	//makeshift underflow countermeasure
+	static unsigned int notelib_backend_libsoundio_underflow_prevention_buffer_size = 0;
+
+	#ifndef NOTELIB_BACKEND_LIBSOUNDIO_ALLOW_POTENTIAL_UNDERFLOW_RACE_CONDITION
+	static bool notelib_backend_libsoundio_static_underflow_prevention_already_in_use = false;
+	#ifndef NOTELIB_BACKEND_LIBSOUNDIO_STATIC_UNDERFLOW_PREVENTION_ALREADY_IN_USE_ERROR_INFO
+		#define NOTELIB_BACKEND_LIBSOUNDIO_STATIC_UNDERFLOW_PREVENTION_ALREADY_IN_USE_ERROR_INFO ((struct notelib_backend_libsoundio_error){.type = notelib_backend_error_backend, .sio = SoundIoErrorBackendUnavailable})
+	#endif
+	#endif
 
 	static int imin(int a, int b) {return a <= b ? a : b;}
 	static int imax(int a, int b) {return a >= b ? a : b;}
@@ -416,7 +424,7 @@ static const unsigned int underflow_prevention_step = 12;
 		struct SoundIoChannelArea *areas;
 		int err;
 
-		int frames_left = imin(imax(frame_count_min, underflow_prevention), frame_count_max);//min(frame_count_max, max(outstream->sample_rate*.01/* = 10 ms*/, frame_count_min));
+		int frames_left = imin(imax(frame_count_min, notelib_backend_libsoundio_underflow_prevention_buffer_size), frame_count_max);//min(frame_count_max, max(outstream->sample_rate*.01/* = 10 ms*/, frame_count_min));
 
 		while(frames_left > 0){
 			int frame_count = frames_left;
@@ -462,12 +470,12 @@ static const unsigned int underflow_prevention_step = 12;
 	static void underflow_callback(struct SoundIoOutStream *outstream){
 		(void)outstream;
 		static int count = 0;
-		if(underflow_prevention){
+		if(notelib_backend_libsoundio_underflow_prevention_buffer_size){
 			//outstream->write_callback(outstream, imin(underflow_prevention, last_max_frame_count), last_max_frame_count); //worked in testing, not sure if this has any actual benefit
 			//alternative prevention strategy: underflow_prevention <<= 1;
 		}//alternative prevention strategy: else underflow_prevention = 1;
-		underflow_prevention += underflow_prevention_step;
-		fprintf(stderr, "underflow %d | p -> %d\n", count++, underflow_prevention);
+		notelib_backend_libsoundio_underflow_prevention_buffer_size += notelib_backend_underflow_prevention_step;
+		fprintf(stderr, "underflow %d | p -> %d\n", count++, notelib_backend_libsoundio_underflow_prevention_buffer_size);
 	}
 
 	static struct notelib_backend_libsoundio_data const notelib_backend_libsoundio_data_empty = {
@@ -479,11 +487,18 @@ static const unsigned int underflow_prevention_step = 12;
 		},
 	};
 	NOTELIB_BACKEND_SPECIFIC_API struct notelib_backend_libsoundio_init_data notelib_backend_libsoundio_initialize_in(void* buffer, size_t buffer_size, const struct notelib_params* params){
+
 		struct notelib_internals_buffer_slice realigned_buffer = notelib_backend_realign_internals_buffer_ptr(buffer, buffer_size);
 		struct notelib_backend_libsoundio_init_data ret = {
 			.initialized_state = notelib_backend_libsoundio_data_empty,
 			.error_info = {.type = notelib_backend_error_none},
 		};
+		#ifndef NOTELIB_BACKEND_LIBSOUNDIO_ALLOW_POTENTIAL_UNDERFLOW_RACE_CONDITION
+			if(notelib_backend_libsoundio_static_underflow_prevention_already_in_use){
+				ret.error_info = NOTELIB_BACKEND_LIBSOUNDIO_STATIC_UNDERFLOW_PREVENTION_ALREADY_IN_USE_ERROR_INFO;
+				return ret;
+			}
+		#endif
 
 		ret.initialized_state.notelib_state = realigned_buffer.pos;
 		enum notelib_status ns = notelib_internals_init(ret.initialized_state.notelib_state, realigned_buffer.length, params);
@@ -549,6 +564,10 @@ static const unsigned int underflow_prevention_step = 12;
 		if((ret.error_info.sio = soundio_outstream_start(ret.initialized_state.sio_state.outstream)))
 			goto backend_error;
 
+		#ifndef NOTELIB_BACKEND_LIBSOUNDIO_ALLOW_POTENTIAL_UNDERFLOW_RACE_CONDITION
+			notelib_backend_libsoundio_static_underflow_prevention_already_in_use = true;
+		#endif
+
 		return ret;
 
 		backend_error:
@@ -570,7 +589,14 @@ static const unsigned int underflow_prevention_step = 12;
 		if(backend_state->sio_state.instance){
 			soundio_destroy(backend_state->sio_state.instance);
 			backend_state->sio_state.instance = NULL;
+			#ifndef NOTELIB_BACKEND_LIBSOUNDIO_ALLOW_POTENTIAL_UNDERFLOW_RACE_CONDITION
+				if(!notelib_backend_libsoundio_static_underflow_prevention_already_in_use)
+					fprintf(stderr, "Warning: (corrupt?) libsoundio notelib backend deinitialized, but singleton (static, underflow prevention) data was not marked in use!");
+			#endif
 		}
+		#ifndef NOTELIB_BACKEND_LIBSOUNDIO_ALLOW_POTENTIAL_UNDERFLOW_RACE_CONDITION
+			notelib_backend_libsoundio_static_underflow_prevention_already_in_use = false;
+		#endif
 		if(backend_state->notelib_state){
 			enum notelib_status ns = notelib_internals_deinit(backend_state->notelib_state);
 			backend_state->notelib_state = NULL;
